@@ -38,7 +38,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn)
 		// Publish the finished sweep as full point cloud
 		sensor_msgs::PointCloud2 lastSweep;
 		pcl::toROSMsg(gScanRegistration->getLastSweep(), lastSweep);
-		lastSweep.header.stamp = ros::Time().fromSec(gScanRegistration->getLastSweepStamp());
+		lastSweep.header.stamp = ros::Time().fromSec(lastSweepStamp);
 		lastSweep.header.frame_id = "/camera";
 		gLastCloudPublisher->publish(lastSweep);
 		cycle = 0;

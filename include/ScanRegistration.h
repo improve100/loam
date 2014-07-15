@@ -16,16 +16,10 @@ namespace loam
 		void finishSweep();
 		pcl::PointCloud<pcl::PointXYZHSV> getCurrentSweep();
 		pcl::PointCloud<pcl::PointXYZHSV> getLastSweep();
-		
-		double getCurrentSweepStamp() {return mCurrentSweepStamp;}
-		double getLastSweepStamp() {return mLastSweepStamp;}
 
 	private:
 		pcl::PointCloud<pcl::PointXYZHSV> mCurrentSweep;
 		pcl::PointCloud<pcl::PointXYZHSV> mLastSweep;
-		
-		double mCurrentSweepStamp;
-		double mLastSweepStamp;
 		
 		// To be removed / renamed
 		double initTime;

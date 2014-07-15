@@ -6,9 +6,6 @@ using namespace loam;
 
 ScanRegistration::ScanRegistration()
 {	
-	mCurrentSweepStamp = 0;
-	mLastSweepStamp = 0;
-	
 	initTime = 0;
 	timeStart = 0;
 	timeLasted = 0;
@@ -32,9 +29,7 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 	{
 		initTime = timestamp;
 	}
-	
-	mCurrentSweepStamp = timestamp;
-	
+
 	int cloudSize = laserCloudIn->points.size();
 
 	// Do some increadible magic:
@@ -53,35 +48,7 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 		cloudSortInd[i] = i;
 		cloudNeighborPicked[i] = 0;
 	}
-	
-// ================================================================================
 
-  bool newSweep = false;
-  laserAngleLast = laserAngleCur;
-  laserAngleCur = atan2(laserCloud->points[cloudSize - 1].y - laserCloud->points[0].y, 
-                        laserCloud->points[cloudSize - 1].x - laserCloud->points[0].x);
-
-  if (laserAngleLast > 0 && laserRotDir == 1 && laserAngleCur < laserAngleLast) {
-    laserRotDir = -1;
-    newSweep = true;
-  } else if (laserAngleLast < 0 && laserRotDir == -1 && laserAngleCur > laserAngleLast) {
-    laserRotDir = 1;
-    newSweep = true;
-  }
-
-  if (newSweep) {
-    timeStart = timeScanLast - initTime;
-
-    mCurrentSweep += laserCloudLessExtreCur;
-	mLastSweepStamp = mCurrentSweepStamp;
-    mLastSweep = mCurrentSweep;
-	mCurrentSweep.clear();
-    laserCloudLessExtreCur.clear();
-  }
-
-// =================================================================================0	
-	
-	
 	// What is happening here?
 	for (int i = 5; i < cloudSize - 5; i++)
 	{
