@@ -173,6 +173,7 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 		}
 	}
 
+	// Filter the remaining points by using only 1 point per 0.1m cube
 	pcl::PointCloud<pcl::PointXYZHSV>::Ptr surfPointsLessFlatDS(new pcl::PointCloud<pcl::PointXYZHSV>());
 	pcl::VoxelGrid<pcl::PointXYZHSV> downSizeFilter;
 	downSizeFilter.setInputCloud(surfPointsLessFlat);
@@ -180,12 +181,6 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 	downSizeFilter.filter(*surfPointsLessFlatDS);
 
 	mExtraPoints += *surfPointsLessFlatDS;
-
-	laserCloudIn->clear();
-	laserCloud->clear();
-	surfPointsLessFlat->clear();
-	surfPointsLessFlatDS->clear();
-
 }
 
 void ScanRegistration::finishSweep()
