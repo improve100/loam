@@ -40,7 +40,7 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 	// New temporary pc to hold some additional values
 	// h: ?
 	// s: Response of feature detector below
-	// v: ?
+	// v: 2(sharp) / 1(less sharp) / -1(flat) / 0(less flat)
 	pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloud(new pcl::PointCloud<pcl::PointXYZHSV>(cloudSize, 1));
 	for (int i = 0; i < cloudSize; i++)
 	{
@@ -100,11 +100,11 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 		int sp = startPoints[i];
 		int ep = endPoints[i];
 
+		// Sort the points within each region based on their c-Value
 		for (int j = sp + 1; j <= ep; j++)
 		{
 			for (int k = j; k >= sp + 1; k--)
 			{
-				// Sort the points within each region based on their c-Value
 				if (laserCloud->points[cloudSortInd[k]].s < laserCloud->points[cloudSortInd[k - 1]].s)
 				{
 					int temp = cloudSortInd[k - 1];
@@ -114,6 +114,7 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 			}
 		}
 
+		// Select the points with largest c-Value (edges)
 		int largestPickedNum = 0;
 		for (int j = ep; j >= sp; j--)
 		{
@@ -140,34 +141,10 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 				{
 					break;
 				}
-
-				cloudNeighborPicked[cloudSortInd[j]] = 1;
-				for (int k = 1; k <= 5; k++)
-				{
-					float diffX = laserCloud->points[cloudSortInd[j] + k].x - laserCloud->points[cloudSortInd[j] + k - 1].x;
-					float diffY = laserCloud->points[cloudSortInd[j] + k].y - laserCloud->points[cloudSortInd[j] + k - 1].y;
-					float diffZ = laserCloud->points[cloudSortInd[j] + k].z - laserCloud->points[cloudSortInd[j] + k - 1].z;
-					if (diffX * diffX + diffY * diffY + diffZ * diffZ > 0.05)
-					{
-						break;
-					}
-					cloudNeighborPicked[cloudSortInd[j] + k] = 1;
-				}
-
-				for (int k = -1; k >= -5; k--)
-				{
-					float diffX = laserCloud->points[cloudSortInd[j] + k].x - laserCloud->points[cloudSortInd[j] + k + 1].x;
-					float diffY = laserCloud->points[cloudSortInd[j] + k].y - laserCloud->points[cloudSortInd[j] + k + 1].y;
-					float diffZ = laserCloud->points[cloudSortInd[j] + k].z - laserCloud->points[cloudSortInd[j] + k + 1].z;
-					if (diffX * diffX + diffY * diffY + diffZ * diffZ > 0.05)
-					{
-						break;
-					}
-					cloudNeighborPicked[cloudSortInd[j] + k] = 1;
-				}
 			}
 		}
 
+		// Select the points with smallest c-Value (surfaces)
 		int smallestPickedNum = 0;
 		for (int j = sp; j <= ep; j++)
 		{
@@ -187,31 +164,6 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 				if (smallestPickedNum >= 4)
 				{
 					break;
-				}
-
-				cloudNeighborPicked[cloudSortInd[j]] = 1;
-				for (int k = 1; k <= 5; k++)
-				{
-					float diffX = laserCloud->points[cloudSortInd[j] + k].x - laserCloud->points[cloudSortInd[j] + k - 1].x;
-					float diffY = laserCloud->points[cloudSortInd[j] + k].y - laserCloud->points[cloudSortInd[j] + k - 1].y;
-					float diffZ = laserCloud->points[cloudSortInd[j] + k].z - laserCloud->points[cloudSortInd[j] + k - 1].z;
-					if (diffX * diffX + diffY * diffY + diffZ * diffZ > 0.05)
-					{
-						break;
-					}
-
-					cloudNeighborPicked[cloudSortInd[j] + k] = 1;
-				}
-				for (int k = -1; k >= -5; k--)
-				{
-					float diffX = laserCloud->points[cloudSortInd[j] + k].x - laserCloud->points[cloudSortInd[j] + k + 1].x;
-					float diffY = laserCloud->points[cloudSortInd[j] + k].y - laserCloud->points[cloudSortInd[j] + k + 1].y;
-					float diffZ = laserCloud->points[cloudSortInd[j] + k].z - laserCloud->points[cloudSortInd[j] + k + 1].z;
-					if (diffX * diffX + diffY * diffY + diffZ * diffZ > 0.05)
-					{
-						break;
-					}
-					cloudNeighborPicked[cloudSortInd[j] + k] = 1;
 				}
 			}
 		}

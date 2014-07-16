@@ -12,7 +12,8 @@ ros::Publisher* gLastCloudPublisher;
 double currentSweepStamp;
 double lastSweepStamp;
 
-unsigned int cycle;
+int cycle;
+int skip;
 
 using namespace ros;
 
@@ -26,7 +27,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn)
 	// Add new scan to current point cloud
 	gScanRegistration->addScan(pclIn, laserCloudIn->header.stamp.toSec());
 		
-	if(cycle >= 3)
+	if(cycle >= skip)
 	{
 		// Publish current accumulated point cloud
 		sensor_msgs::PointCloud2 currentSweep;
@@ -35,12 +36,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn)
 		currentSweep.header.frame_id = "/camera";
 		gCurrentCloudPublisher->publish(currentSweep);
 
-		// Publish the finished sweep as full point cloud
-		sensor_msgs::PointCloud2 lastSweep;
-		pcl::toROSMsg(gScanRegistration->getLastSweep(), lastSweep);
-		lastSweep.header.stamp = ros::Time().fromSec(lastSweepStamp);
-		lastSweep.header.frame_id = "/camera";
-		gLastCloudPublisher->publish(lastSweep);
+		ROS_DEBUG("Running sweep for odometry: %d points", currentSweep.width);
 		cycle = 0;
 	}
 	cycle++;
@@ -51,12 +47,27 @@ void sweepHandler(const std_msgs::HeaderConstPtr& msg)
 	// Finish the currently running sweep
 	gScanRegistration->finishSweep();
 	lastSweepStamp = currentSweepStamp;
+	
+	// Publish the finished sweep as full point cloud
+	sensor_msgs::PointCloud2 lastSweep;
+	pcl::toROSMsg(gScanRegistration->getLastSweep(), lastSweep);
+	lastSweep.header.stamp = ros::Time().fromSec(lastSweepStamp);
+	lastSweep.header.frame_id = "/camera";
+	gLastCloudPublisher->publish(lastSweep);
+	
+	ROS_DEBUG("Full sweep for mapping: %d points.", lastSweep.width);
 }
 
 int main(int argc, char **argv)
 {
 	init(argc, argv, "ScanRegistration");
 	NodeHandle n;
+	n.param("frame_skip", skip, 3);
+	if(skip < 1)
+	{
+		skip = 3;
+		ROS_WARN("Parameter 'frame_skip' must be >= 1, using default of 3.");
+	}
 
 	gScanRegistration = new loam::ScanRegistration();
 
