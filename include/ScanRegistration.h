@@ -20,6 +20,7 @@ namespace loam
 	private:
 		pcl::PointCloud<pcl::PointXYZHSV> mCurrentSweep;
 		pcl::PointCloud<pcl::PointXYZHSV> mLastSweep;
+		pcl::PointCloud<pcl::PointXYZHSV> mExtraPoints;
 		
 		// To be removed / renamed
 		double initTime;
@@ -35,8 +36,6 @@ namespace loam
 		int laserRotDir;
 		float laserAngleLast;
 		float laserAngleCur;
-		
-		pcl::PointCloud<pcl::PointXYZHSV> laserCloudLessExtreCur;
 	};
 }
 

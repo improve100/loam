@@ -77,12 +77,6 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 
 		laserCloud->points[i].s = diffX * diffX + diffY * diffY + diffZ * diffZ; // c-Value
 	}
-	
-	pcl::PointCloud<pcl::PointXYZHSV>::Ptr cornerPointsSharp(new pcl::PointCloud<pcl::PointXYZHSV>());
-	pcl::PointCloud<pcl::PointXYZHSV>::Ptr cornerPointsLessSharp(new pcl::PointCloud<pcl::PointXYZHSV>());
-	pcl::PointCloud<pcl::PointXYZHSV>::Ptr surfPointsFlat(new pcl::PointCloud<pcl::PointXYZHSV>());
-	pcl::PointCloud<pcl::PointXYZHSV>::Ptr surfPointsLessFlat(new pcl::PointCloud<pcl::PointXYZHSV>());
-
 
 	// Split scan in 4 regions
 	int startPoints[4] = {	5,
@@ -132,11 +126,11 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 				if (largestPickedNum <= 2)
 				{
 					laserCloud->points[cloudSortInd[j]].v = 2;
-					cornerPointsSharp->push_back(laserCloud->points[cloudSortInd[j]]);
+					mCurrentSweep.push_back(laserCloud->points[cloudSortInd[j]]);
 				} else if (largestPickedNum <= 20)
 				{
 					laserCloud->points[cloudSortInd[j]].v = 1;
-					cornerPointsLessSharp->push_back(laserCloud->points[cloudSortInd[j]]);
+					mExtraPoints.push_back(laserCloud->points[cloudSortInd[j]]);
 				}else
 				{
 					break;
@@ -158,7 +152,7 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 			fabs(laserCloud->points[cloudSortInd[j]].z) < 30)
 			{
 				laserCloud->points[cloudSortInd[j]].v = -1;
-				surfPointsFlat->push_back(laserCloud->points[cloudSortInd[j]]);
+				mCurrentSweep.push_back(laserCloud->points[cloudSortInd[j]]);
 
 				smallestPickedNum++;
 				if (smallestPickedNum >= 4)
@@ -169,6 +163,8 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 		}
 	}
 
+	// Select remaining points for mapping
+	pcl::PointCloud<pcl::PointXYZHSV>::Ptr surfPointsLessFlat(new pcl::PointCloud<pcl::PointXYZHSV>());
 	for (int i = 0; i < cloudSize; i++)
 	{
 		if (laserCloud->points[i].v == 0)
@@ -183,16 +179,10 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 	downSizeFilter.setLeafSize(0.1, 0.1, 0.1);
 	downSizeFilter.filter(*surfPointsLessFlatDS);
 
-	mCurrentSweep += *cornerPointsSharp;
-	mCurrentSweep += *surfPointsFlat;
-	laserCloudLessExtreCur += *cornerPointsLessSharp;
-	laserCloudLessExtreCur += *surfPointsLessFlatDS;
+	mExtraPoints += *surfPointsLessFlatDS;
 
 	laserCloudIn->clear();
 	laserCloud->clear();
-	cornerPointsSharp->clear();
-	cornerPointsLessSharp->clear();
-	surfPointsFlat->clear();
 	surfPointsLessFlat->clear();
 	surfPointsLessFlatDS->clear();
 
@@ -202,11 +192,11 @@ void ScanRegistration::finishSweep()
 {
 	timeStart = timeScanLast - initTime;
 	
-	mCurrentSweep += laserCloudLessExtreCur;
 	mLastSweep = mCurrentSweep;
-	mCurrentSweep.clear();
+	mLastSweep += mExtraPoints;
 	
-    laserCloudLessExtreCur.clear();
+	mCurrentSweep.clear();
+	mExtraPoints.clear();
 }
 
 pcl::PointCloud<pcl::PointXYZHSV> ScanRegistration::getCurrentSweep()
