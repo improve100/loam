@@ -24,18 +24,9 @@ namespace loam
 		
 		// To be removed / renamed
 		double initTime;
-		double timeStart;
-		double timeLasted;
-		
-		double timeScanCur;
-		double timeScanLast;
 		
 		int cloudSortInd[800];
 		int cloudNeighborPicked[800];
-		
-		int laserRotDir;
-		float laserAngleLast;
-		float laserAngleCur;
 	};
 }
 

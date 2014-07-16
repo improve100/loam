@@ -7,15 +7,7 @@ using namespace loam;
 ScanRegistration::ScanRegistration()
 {	
 	initTime = 0;
-	timeStart = 0;
-	timeLasted = 0;
-	
-	timeScanCur = 0;
-	timeScanLast = 0;	
-	
 	laserRotDir = 1;
-	laserAngleLast = 0;
-	laserAngleCur = 0;
 }
 
 ScanRegistration::~ScanRegistration()
@@ -31,11 +23,6 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 	}
 
 	int cloudSize = laserCloudIn->points.size();
-
-	// Do some increadible magic:
-	timeScanLast = timeScanCur;
-	timeScanCur = timestamp;
-	timeLasted = timeScanCur - initTime;	
 	
 	// New temporary pc to hold some additional values
 	// h: ?
@@ -47,7 +34,7 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 		laserCloud->points[i].x = laserCloudIn->points[i].x;
 		laserCloud->points[i].y = laserCloudIn->points[i].y;
 		laserCloud->points[i].z = laserCloudIn->points[i].z;
-		laserCloud->points[i].h = timeLasted;
+		laserCloud->points[i].h = timestamp - initTime;
 		laserCloud->points[i].v = 0;
 		cloudSortInd[i] = i;
 		cloudNeighborPicked[i] = 0;
@@ -185,8 +172,6 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 
 void ScanRegistration::finishSweep()
 {
-	timeStart = timeScanLast - initTime;
-	
 	mLastSweep = mCurrentSweep;
 	mLastSweep += mExtraPoints;
 	
