@@ -7,7 +7,6 @@ using namespace loam;
 ScanRegistration::ScanRegistration()
 {	
 	initTime = 0;
-	laserRotDir = 1;
 }
 
 ScanRegistration::~ScanRegistration()

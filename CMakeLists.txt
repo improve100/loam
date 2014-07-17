@@ -5,62 +5,12 @@ project(loam)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(PCL REQUIRED)
 
-
-################################################
-## Declare ROS messages, services and actions ##
-################################################
-
-## To declare and build messages, services or actions from within this
-## package, follow these steps:
-## * Let MSG_DEP_SET be the set of packages whose message types you use in
-##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
-## * In the file package.xml:
-##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
-##   * If MSG_DEP_SET isn't empty the following dependencies might have been
-##     pulled in transitively but can be declared for certainty nonetheless:
-##     * add a build_depend tag for "message_generation"
-##     * add a run_depend tag for "message_runtime"
-## * In this file (CMakeLists.txt):
-##   * add "message_generation" and every package in MSG_DEP_SET to
-##     find_package(catkin REQUIRED COMPONENTS ...)
-##   * add "message_runtime" and every package in MSG_DEP_SET to
-##     catkin_package(CATKIN_DEPENDS ...)
-##   * uncomment the add_*_files sections below as needed
-##     and list every .msg/.srv/.action file to be processed
-##   * uncomment the generate_messages entry below
-##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
-
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
-
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
-
-## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
-
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
 
 ###################################
 ## catkin specific configuration ##
@@ -87,10 +37,14 @@ catkin_package(
 include_directories(include ${PCL_INCLUDE_DIRS})
 
 ## Declare a cpp library
-add_library(loam src/ScanRegistration.cpp)
+add_library(loam
+  src/ScanRegistration.cpp
+  src/LaserOdometry.cpp
+)
 
 ## Declare a cpp executable
 add_executable(scan_registration src/ScanRegistrationNode.cpp)
+add_executable(laser_odometry src/LaserOdometryNode.cpp)
 add_executable(trigger src/TriggerNode.cpp)
 
 ## Add cmake target dependencies of the executable/library
@@ -104,6 +58,12 @@ target_link_libraries(loam
 )
 
 target_link_libraries(scan_registration
+   ${catkin_LIBRARIES}
+   ${PCL_LIBRARIES}
+   loam
+)
+
+target_link_libraries(laser_odometry
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES}
    loam
