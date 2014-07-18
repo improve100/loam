@@ -376,10 +376,6 @@ int main(int argc, char** argv)
       for (int iterCount = 0; iterCount < iterNum; iterCount++) {
 
         laserCloudExtreOri->clear();
-        //laserCloudExtreSel->clear();
-        //laserCloudExtreUnsel->clear();
-        //laserCloudExtreProj->clear();
-        //laserCloudSel->clear();
         coeffSel->clear();
 
         bool isPointSel = false;
@@ -515,11 +511,6 @@ int main(int argc, char** argv)
 
               if (s > 0.2 || iterNum < 30) {
                 laserCloudExtreOri->push_back(extreOri);
-                //laserCloudExtreSel->push_back(extreSel);
-                //laserCloudExtreProj->push_back(extreProj);
-                //laserCloudSel->push_back(tripod1);
-                //laserCloudSel->push_back(tripod2);
-                //laserCloudSel->push_back(tripod3);
                 coeffSel->push_back(coeff);
 
                 if (isPointSel) {
@@ -527,8 +518,6 @@ int main(int argc, char** argv)
                   pointSelInd[3 * i + 1] = minPointInd2;
                   pointSelInd[3 * i + 2] = minPointInd3;
                 }
-              } else {
-                //laserCloudExtreUnsel->push_back(extreSel);
               }
             }
           } else if (fabs(extreOri.v - 2) < 0.05) {
@@ -656,8 +645,6 @@ int main(int argc, char** argv)
                   pointSelInd[3 * i] = closestPointInd;
                   pointSelInd[3 * i + 1] = minPointInd2;
                 }
-              } else {
-                //laserCloudExtreUnsel->push_back(extreSel);
               }
             }
           }
@@ -735,7 +722,6 @@ int main(int argc, char** argv)
         matAtA = matAt * matA; //+ 0.1 * cv::Mat::eye(6, 6, CV_32F);
         matAtB = matAt * matB;
         cv::solve(matAtA, matAtB, matX, cv::DECOMP_QR);
-        //cv::solve(matA, matB, matX, cv::DECOMP_SVD);
 
         if (fabs(matX.at<float>(0, 0)) < 0.005 &&
             fabs(matX.at<float>(1, 0)) < 0.005 &&
@@ -744,9 +730,6 @@ int main(int argc, char** argv)
             fabs(matX.at<float>(4, 0)) < 0.01 &&
             fabs(matX.at<float>(5, 0)) < 0.01) {
 
-          //transform[0] += 0.7 * matX.at<float>(0, 0);
-          //transform[1] += 0.7 * matX.at<float>(1, 0);
-          //transform[2] += 0.7 * matX.at<float>(2, 0);
           transform[0] += 0.1 * matX.at<float>(0, 0);
           transform[1] += 0.1 * matX.at<float>(1, 0);
           transform[2] += 0.1 * matX.at<float>(2, 0);
@@ -754,7 +737,7 @@ int main(int argc, char** argv)
           transform[4] += matX.at<float>(4, 0);
           transform[5] += matX.at<float>(5, 0);
         } else {
-          //ROS_INFO ("Odometry update out of bound");
+          ROS_WARN ("Odometry update out of bound");
         }
       }
     }
@@ -846,8 +829,8 @@ int main(int argc, char** argv)
       laserOdometryTrans.setOrigin(tf::Vector3(tx, ty, tz));
       tfBroadcaster.sendTransform(laserOdometryTrans);
 
-      //ROS_INFO ("%f %f %f %f %f %f", transformSum[0], transformSum[1], transformSum[2], 
-      //                               transformSum[3], transformSum[4], transformSum[5]);
+      ROS_DEBUG("%f %f %f %f %f %f", transformSum[0], transformSum[1], transformSum[2], 
+                                     transformSum[3], transformSum[4], transformSum[5]);
     }
 
     status = ros::ok();
