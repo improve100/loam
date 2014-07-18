@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 find_package(PCL REQUIRED)
+find_package(OpenCV REQUIRED)
 
 
 ###################################
@@ -46,6 +47,7 @@ add_library(loam
 add_executable(scan_registration src/ScanRegistrationNode.cpp)
 add_executable(laser_odometry src/LaserOdometryNode.cpp)
 add_executable(trigger src/TriggerNode.cpp)
+add_executable(odom_old src/odom_old.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -73,6 +75,8 @@ target_link_libraries(trigger
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES}
 )
+
+target_link_libraries(odom_old ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES})
 
 #############
 ## Install ##
