@@ -60,28 +60,12 @@ float transform[6] = {0};
 float transformRec[6] = {0};
 float transformSum[6] = {0};
 
-float imuRollStartCur = 0, imuPitchStartCur = 0, imuYawStartCur = 0;
-float imuRollCur = 0, imuPitchCur = 0, imuYawCur = 0;
-float imuShiftFromStartXCur = 0, imuShiftFromStartYCur = 0, imuShiftFromStartZCur = 0;
-float imuVeloFromStartXCur = 0, imuVeloFromStartYCur = 0, imuVeloFromStartZCur = 0;
-
-float imuRollStartLast = 0, imuPitchStartLast = 0, imuYawStartLast = 0;
-float imuRollLast = 0, imuPitchLast = 0, imuYawLast = 0;
-float imuShiftFromStartXLast = 0, imuShiftFromStartYLast = 0, imuShiftFromStartZLast = 0;
-float imuVeloFromStartXLast = 0, imuVeloFromStartYLast = 0, imuVeloFromStartZLast = 0;
-
-bool imuInited = false;
-
 void TransformReset()
 {
   for (int i = 0; i < 6; i++) {
     transformRec[i] = transform[i];
     transform[i] = 0;
   }
-
-  transformRec[3] -= imuVeloFromStartXLast * (startTimeCur - startTimeLast);
-  transformRec[4] -= imuVeloFromStartYLast * (startTimeCur - startTimeLast);
-  transformRec[5] -= imuVeloFromStartZLast * (startTimeCur - startTimeLast);
 }
 
 void TransformToStart(pcl::PointXYZHSV *pi, pcl::PointXYZHSV *po, double startTime, double endTime)
@@ -153,30 +137,30 @@ void TransformToEnd(pcl::PointXYZHSV *pi, pcl::PointXYZHSV *po, double startTime
   float y6 = sin(rz) * x5 + cos(rz) * y5 + ty;
   float z6 = z5 + tz;
 
-  float x7 = cos(imuRollStartLast) * (x6 - imuShiftFromStartXLast) 
-           - sin(imuRollStartLast) * (y6 - imuShiftFromStartYLast);
-  float y7 = sin(imuRollStartLast) * (x6 - imuShiftFromStartXLast) 
-           + cos(imuRollStartLast) * (y6 - imuShiftFromStartYLast);
-  float z7 = z6 - imuShiftFromStartZLast;
+  float x7 = cos(0) * (x6 - 0) 
+           - sin(0) * (y6 - 0);
+  float y7 = sin(0) * (x6 - 0) 
+           + cos(0) * (y6 - 0);
+  float z7 = z6 - 0;
 
   float x8 = x7;
-  float y8 = cos(imuPitchStartLast) * y7 - sin(imuPitchStartLast) * z7;
-  float z8 = sin(imuPitchStartLast) * y7 + cos(imuPitchStartLast) * z7;
+  float y8 = cos(0) * y7 - sin(0) * z7;
+  float z8 = sin(0) * y7 + cos(0) * z7;
 
-  float x9 = cos(imuYawStartLast) * x8 + sin(imuYawStartLast) * z8;
+  float x9 = cos(0) * x8 + sin(0) * z8;
   float y9 = y8;
-  float z9 = -sin(imuYawStartLast) * x8 + cos(imuYawStartLast) * z8;
+  float z9 = -sin(0) * x8 + cos(0) * z8;
 
-  float x10 = cos(imuYawLast) * x9 - sin(imuYawLast) * z9;
+  float x10 = cos(0) * x9 - sin(0) * z9;
   float y10 = y9;
-  float z10 = sin(imuYawLast) * x9 + cos(imuYawLast) * z9;
+  float z10 = sin(0) * x9 + cos(0) * z9;
 
   float x11 = x10;
-  float y11 = cos(imuPitchLast) * y10 + sin(imuPitchLast) * z10;
-  float z11 = -sin(imuPitchLast) * y10 + cos(imuPitchLast) * z10;
+  float y11 = cos(0) * y10 + sin(0) * z10;
+  float z11 = -sin(0) * y10 + cos(0) * z10;
 
-  po->x = cos(imuRollLast) * x11 + sin(imuRollLast) * y11;
-  po->y = -sin(imuRollLast) * x11 + cos(imuRollLast) * y11;
+  po->x = cos(0) * x11 + sin(0) * y11;
+  po->y = -sin(0) * x11 + cos(0) * y11;
   po->z = z11;
   po->h = pi->h;
   po->s = pi->s;
@@ -202,66 +186,6 @@ void AccumulateRotation(float cx, float cy, float cz, float lx, float ly, float 
   oz = atan2(srzcrx / cos(ox), crzcrx / cos(ox));
 }
 
-void PluginIMURotation(float bcx, float bcy, float bcz, float blx, float bly, float blz, 
-                       float alx, float aly, float alz, float &acx, float &acy, float &acz)
-{
-  float sbcx = sin(bcx);
-  float cbcx = cos(bcx);
-  float sbcy = sin(bcy);
-  float cbcy = cos(bcy);
-  float sbcz = sin(bcz);
-  float cbcz = cos(bcz);
-
-  float sblx = sin(blx);
-  float cblx = cos(blx);
-  float sbly = sin(bly);
-  float cbly = cos(bly);
-  float sblz = sin(blz);
-  float cblz = cos(blz);
-
-  float salx = sin(alx);
-  float calx = cos(alx);
-  float saly = sin(aly);
-  float caly = cos(aly);
-  float salz = sin(alz);
-  float calz = cos(alz);
-
-  float srx = -sbcx*(salx*sblx + calx*caly*cblx*cbly + calx*cblx*saly*sbly) 
-            - cbcx*cbcz*(calx*saly*(cbly*sblz - cblz*sblx*sbly) 
-            - calx*caly*(sbly*sblz + cbly*cblz*sblx) + cblx*cblz*salx) 
-            - cbcx*sbcz*(calx*caly*(cblz*sbly - cbly*sblx*sblz) 
-            - calx*saly*(cbly*cblz + sblx*sbly*sblz) + cblx*salx*sblz);
-  acx = -asin(srx);
-
-  float srycrx = (cbcy*sbcz - cbcz*sbcx*sbcy)*(calx*saly*(cbly*sblz - cblz*sblx*sbly) 
-               - calx*caly*(sbly*sblz + cbly*cblz*sblx) + cblx*cblz*salx) 
-               - (cbcy*cbcz + sbcx*sbcy*sbcz)*(calx*caly*(cblz*sbly - cbly*sblx*sblz) 
-               - calx*saly*(cbly*cblz + sblx*sbly*sblz) + cblx*salx*sblz) 
-               + cbcx*sbcy*(salx*sblx + calx*caly*cblx*cbly + calx*cblx*saly*sbly);
-  float crycrx = (cbcz*sbcy - cbcy*sbcx*sbcz)*(calx*caly*(cblz*sbly - cbly*sblx*sblz) 
-               - calx*saly*(cbly*cblz + sblx*sbly*sblz) + cblx*salx*sblz) 
-               - (sbcy*sbcz + cbcy*cbcz*sbcx)*(calx*saly*(cbly*sblz - cblz*sblx*sbly) 
-               - calx*caly*(sbly*sblz + cbly*cblz*sblx) + cblx*cblz*salx) 
-               + cbcx*cbcy*(salx*sblx + calx*caly*cblx*cbly + calx*cblx*saly*sbly);
-  acy = atan2(srycrx / cos(acx), crycrx / cos(acx));
-  
-  float srzcrx = sbcx*(cblx*cbly*(calz*saly - caly*salx*salz) 
-               - cblx*sbly*(caly*calz + salx*saly*salz) + calx*salz*sblx) 
-               - cbcx*cbcz*((caly*calz + salx*saly*salz)*(cbly*sblz - cblz*sblx*sbly) 
-               + (calz*saly - caly*salx*salz)*(sbly*sblz + cbly*cblz*sblx) 
-               - calx*cblx*cblz*salz) + cbcx*sbcz*((caly*calz + salx*saly*salz)*(cbly*cblz 
-               + sblx*sbly*sblz) + (calz*saly - caly*salx*salz)*(cblz*sbly - cbly*sblx*sblz) 
-               + calx*cblx*salz*sblz);
-  float crzcrx = sbcx*(cblx*sbly*(caly*salz - calz*salx*saly) 
-               - cblx*cbly*(saly*salz + caly*calz*salx) + calx*calz*sblx) 
-               + cbcx*cbcz*((saly*salz + caly*calz*salx)*(sbly*sblz + cbly*cblz*sblx) 
-               + (caly*salz - calz*salx*saly)*(cbly*sblz - cblz*sblx*sbly) 
-               + calx*calz*cblx*cblz) - cbcx*sbcz*((saly*salz + caly*calz*salx)*(cblz*sbly 
-               - cbly*sblx*sblz) + (caly*salz - calz*salx*saly)*(cbly*cblz + sblx*sbly*sblz) 
-               - calx*calz*cblx*sblz);
-  acz = atan2(srzcrx / cos(acx), crzcrx / cos(acx));
-}
-
 void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudExtreCur2)
 {
   if (!systemInited) {
@@ -277,35 +201,10 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 
   laserCloudExtreCur->clear();
   for (int i = 0; i < laserCloudExtreCur3Size; i++) {
-    if (fabs(laserCloudExtreCur3->points[i].v - 10) < 0.005) {
-      imuPitchStartCur = laserCloudExtreCur3->points[i].x;
-      imuYawStartCur = laserCloudExtreCur3->points[i].y;
-      imuRollStartCur = laserCloudExtreCur3->points[i].z;
-    } else if (fabs(laserCloudExtreCur3->points[i].v - 11) < 0.005) {
-      imuPitchCur = laserCloudExtreCur3->points[i].x;
-      imuYawCur = laserCloudExtreCur3->points[i].y;
-      imuRollCur = laserCloudExtreCur3->points[i].z;
-    } else if (fabs(laserCloudExtreCur3->points[i].v - 12) < 0.005) {
-      imuShiftFromStartXCur = laserCloudExtreCur3->points[i].x;
-      imuShiftFromStartYCur = laserCloudExtreCur3->points[i].y;
-      imuShiftFromStartZCur = laserCloudExtreCur3->points[i].z;
-    } else if (fabs(laserCloudExtreCur3->points[i].v - 13) < 0.005) {
-      imuVeloFromStartXCur = laserCloudExtreCur3->points[i].x;
-      imuVeloFromStartYCur = laserCloudExtreCur3->points[i].y;
-      imuVeloFromStartZCur = laserCloudExtreCur3->points[i].z;
-    } else {
+    
       laserCloudExtreCur->push_back(laserCloudExtreCur3->points[i]);
-    }
   }
   laserCloudExtreCur3->clear();
-
-  if (!imuInited) {
-    transformSum[0] += imuPitchStartCur;
-    //transformSum[1] += imuYawStartCur;
-    transformSum[2] += imuRollStartCur;
-
-    imuInited = true;
-  }
 
   if (timeLasted > 4.0) {
     newLaserCloudExtreCur = true;
@@ -343,26 +242,6 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
       } 
       if (fabs(laserCloudLast->points[i].v) < 0.005 || fabs(laserCloudLast->points[i].v + 1) < 0.005) {
         laserCloudSurfLast->push_back(laserCloudLast->points[i]);
-      }
-      if (fabs(laserCloudLast->points[i].v - 10) < 0.005) {
-        imuPitchStartLast = laserCloudLast->points[i].x;
-        imuYawStartLast = laserCloudLast->points[i].y;
-        imuRollStartLast = laserCloudLast->points[i].z;
-      }
-      if (fabs(laserCloudLast->points[i].v - 11) < 0.005) {
-        imuPitchLast = laserCloudLast->points[i].x;
-        imuYawLast = laserCloudLast->points[i].y;
-        imuRollLast = laserCloudLast->points[i].z;
-      }
-      if (fabs(laserCloudLast->points[i].v - 12) < 0.005) {
-        imuShiftFromStartXLast = laserCloudLast->points[i].x;
-        imuShiftFromStartYLast = laserCloudLast->points[i].y;
-        imuShiftFromStartZLast = laserCloudLast->points[i].z;
-      }
-      if (fabs(laserCloudLast->points[i].v - 13) < 0.005) {
-        imuVeloFromStartXLast = laserCloudLast->points[i].x;
-        imuVeloFromStartYLast = laserCloudLast->points[i].y;
-        imuVeloFromStartZLast = laserCloudLast->points[i].z;
       }
     }
 
@@ -880,42 +759,6 @@ int main(int argc, char** argv)
           //ROS_INFO ("Odometry update out of bound");
         }
       }
-
-      /*sensor_msgs::PointCloud2 pc12;
-      pcl::toROSMsg(*laserCloudCornerPtr, pc12);
-      pc12.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
-      pc12.header.frame_id = "/camera";
-      pub1.publish(pc12);
-
-      sensor_msgs::PointCloud2 pc22;
-      pcl::toROSMsg(*laserCloudSurfPtr, pc22);
-      pc22.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
-      pc22.header.frame_id = "/camera";
-      pub2.publish(pc22);
-
-      sensor_msgs::PointCloud2 pc32;
-      pcl::toROSMsg(*laserCloudExtreSel, pc32);
-      pc32.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
-      pc32.header.frame_id = "/camera";
-      pub3.publish(pc32);
-
-      sensor_msgs::PointCloud2 pc42;
-      pcl::toROSMsg(*laserCloudExtreUnsel, pc42);
-      pc42.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
-      pc42.header.frame_id = "/camera";
-      pub4.publish(pc42);
-
-      sensor_msgs::PointCloud2 pc52;
-      pcl::toROSMsg(*laserCloudExtreProj, pc52);
-      pc52.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
-      pc52.header.frame_id = "/camera";
-      pub5.publish(pc52);
-
-      sensor_msgs::PointCloud2 pc62;
-      pcl::toROSMsg(*laserCloudSel, pc62);
-      pc62.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
-      pc62.header.frame_id = "/camera";
-      pub6.publish(pc62);*/
     }
 
     if (newLaserPoints) {
@@ -924,11 +767,11 @@ int main(int argc, char** argv)
         AccumulateRotation(transformSum[0], transformSum[1], transformSum[2], 
                            -transform[0], -transform[1] * 1.05, -transform[2], rx, ry, rz);
 
-        float x1 = cos(rz) * (transform[3] - imuShiftFromStartXLast) 
-                 - sin(rz) * (transform[4] - imuShiftFromStartYLast);
-        float y1 = sin(rz) * (transform[3] - imuShiftFromStartXLast) 
-                 + cos(rz) * (transform[4] - imuShiftFromStartYLast);
-        float z1 = transform[5] * 1.05 - imuShiftFromStartZLast;
+        float x1 = cos(rz) * (transform[3] - 0) 
+                 - sin(rz) * (transform[4] - 0);
+        float y1 = sin(rz) * (transform[3] - 0) 
+                 + cos(rz) * (transform[4] - 0);
+        float z1 = transform[5] * 1.05 - 0;
 
         float x2 = x1;
         float y2 = cos(rx) * y1 - sin(rx) * z1;
@@ -938,8 +781,8 @@ int main(int argc, char** argv)
         ty = transformSum[4] - y2;
         tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
 
-        PluginIMURotation(rx, ry, rz, imuPitchStartLast, imuYawStartLast, imuRollStartLast, 
-                          imuPitchLast, imuYawLast, imuRollLast, rx, ry, rz);
+ //       PluginIMURotation(rx, ry, rz, imuPitchStartLast, imuYawStartLast, imuRollStartLast, 
+ //                         imuPitchLast, imuYawLast, imuRollLast, rx, ry, rz);
 
         int laserCloudCornerLastNum = laserCloudCornerLast->points.size();
         for (int i = 0; i < laserCloudCornerLastNum; i++) {
@@ -972,11 +815,11 @@ int main(int argc, char** argv)
         AccumulateRotation(transformSum[0], transformSum[1], transformSum[2], 
                            -transform[0], -transform[1] * 1.05, -transform[2], rx, ry, rz);
 
-        float x1 = cos(rz) * (transform[3] - imuShiftFromStartXCur) 
-                 - sin(rz) * (transform[4] - imuShiftFromStartYCur);
-        float y1 = sin(rz) * (transform[3] - imuShiftFromStartXCur) 
-                 + cos(rz) * (transform[4] - imuShiftFromStartYCur);
-        float z1 = transform[5] * 1.05 - imuShiftFromStartZCur;
+        float x1 = cos(rz) * (transform[3] - 0) 
+                 - sin(rz) * (transform[4] - 0);
+        float y1 = sin(rz) * (transform[3] - 0) 
+                 + cos(rz) * (transform[4] - 0);
+        float z1 = transform[5] * 1.05 - 0;
 
         float x2 = x1;
         float y2 = cos(rx) * y1 - sin(rx) * z1;
@@ -986,8 +829,8 @@ int main(int argc, char** argv)
         ty = transformSum[4] - y2;
         tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
 
-        PluginIMURotation(rx, ry, rz, imuPitchStartCur, imuYawStartCur, imuRollStartCur, 
-                          imuPitchCur, imuYawCur, imuRollCur, rx, ry, rz);
+ //       PluginIMURotation(rx, ry, rz, imuPitchStartCur, imuYawStartCur, imuRollStartCur, 
+ //                         imuPitchCur, imuYawCur, imuRollCur, rx, ry, rz);
       }
 
       geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw(rz, -rx, -ry);
