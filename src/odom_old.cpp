@@ -272,18 +272,6 @@ int main(int argc, char** argv)
 
   ros::Publisher pubLaserCloudLast2 = nh.advertise<sensor_msgs::PointCloud2> ("/laser_cloud_last_2", 2);
 
-  //ros::Publisher pub1 = nh.advertise<sensor_msgs::PointCloud2> ("/pc1", 1);
-
-  //ros::Publisher pub2 = nh.advertise<sensor_msgs::PointCloud2> ("/pc2", 1);
-
-  //ros::Publisher pub3 = nh.advertise<sensor_msgs::PointCloud2> ("/pc3", 1);
-
-  //ros::Publisher pub4 = nh.advertise<sensor_msgs::PointCloud2> ("/pc4", 1);
-
-  //ros::Publisher pub5 = nh.advertise<sensor_msgs::PointCloud2> ("/pc5", 1);
-
-  //ros::Publisher pub6 = nh.advertise<sensor_msgs::PointCloud2> ("/pc6", 1);
-
   ros::Publisher pubLaserOdometry = nh.advertise<nav_msgs::Odometry> ("/cam_to_init", 5);
   nav_msgs::Odometry laserOdometry;
   laserOdometry.header.frame_id = "/camera_init";
@@ -635,10 +623,6 @@ int main(int argc, char** argv)
 
               if (s > 0.4) {
                 laserCloudExtreOri->push_back(extreOri);
-                //laserCloudExtreSel->push_back(extreSel);
-                //laserCloudExtreProj->push_back(extreProj);
-                //laserCloudSel->push_back(tripod1);
-                //laserCloudSel->push_back(tripod2);
                 coeffSel->push_back(coeff);
 
                 if (isPointSel) {
@@ -762,9 +746,6 @@ int main(int argc, char** argv)
         ty = transformSum[4] - y2;
         tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
 
- //       PluginIMURotation(rx, ry, rz, imuPitchStartLast, imuYawStartLast, imuRollStartLast, 
- //                         imuPitchLast, imuYawLast, imuRollLast, rx, ry, rz);
-
         int laserCloudCornerLastNum = laserCloudCornerLast->points.size();
         for (int i = 0; i < laserCloudCornerLastNum; i++) {
           TransformToEnd(&laserCloudCornerLast->points[i], &laserCloudCornerLast->points[i], 
@@ -809,9 +790,6 @@ int main(int argc, char** argv)
         tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
         ty = transformSum[4] - y2;
         tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
-
- //       PluginIMURotation(rx, ry, rz, imuPitchStartCur, imuYawStartCur, imuRollStartCur, 
- //                         imuPitchCur, imuYawCur, imuRollCur, rx, ry, rz);
       }
 
       geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw(rz, -rx, -ry);
