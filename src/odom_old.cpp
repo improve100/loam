@@ -277,11 +277,6 @@ int main(int argc, char** argv)
   laserOdometry.header.frame_id = "/camera_init";
   laserOdometry.child_frame_id = "/camera";
 
-  tf::TransformBroadcaster tfBroadcaster;
-  tf::StampedTransform laserOdometryTrans;
-  laserOdometryTrans.frame_id_ = "/camera_init";
-  laserOdometryTrans.child_frame_id_ = "/camera";
-
   std::vector<int> pointSearchInd;
   std::vector<float> pointSearchSqDis;
   std::vector<int> pointSelInd;
@@ -310,7 +305,6 @@ int main(int argc, char** argv)
       kdtreeSurfPtr = kdtreeSurfLLast;
 
       laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
-      laserOdometryTrans.stamp_ = ros::Time().fromSec(timeLaserCloudLast);
 
       sweepEnd = true;
       newLaserPoints = true;
@@ -331,7 +325,6 @@ int main(int argc, char** argv)
       kdtreeSurfPtr = kdtreeSurfLast;
 
       laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
-      laserOdometryTrans.stamp_ = ros::Time().fromSec(timeLaserCloudExtreCur);
 
       float s = (timeLasted - timeLastedRec) / (startTimeCur - startTimeLast);
       for (int i = 0; i < 6; i++) {
@@ -802,10 +795,6 @@ int main(int argc, char** argv)
       laserOdometry.pose.pose.position.y = ty;
       laserOdometry.pose.pose.position.z = tz;
       pubLaserOdometry.publish(laserOdometry);
-
-      laserOdometryTrans.setRotation(tf::Quaternion(-geoQuat.y, -geoQuat.z, geoQuat.x, geoQuat.w));
-      laserOdometryTrans.setOrigin(tf::Vector3(tx, ty, tz));
-      tfBroadcaster.sendTransform(laserOdometryTrans);
 
       ROS_DEBUG("%f %f %f %f %f %f", transformSum[0], transformSum[1], transformSum[2], 
                                      transformSum[3], transformSum[4], transformSum[5]);
