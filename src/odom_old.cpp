@@ -67,7 +67,6 @@ std::vector<int> pointSelInd;
 pcl::PointXYZHSV extreOri, extreSel, extreProj, tripod1, tripod2, tripod3, coeff;
 
 bool sweepEnd = false;
-bool newLaserPoints = false;
 bool sufficientPoints = false;
 double startTime, endTime;
 
@@ -214,8 +213,6 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		return;
 	
 	// Everything from main()
-	sweepEnd = false;
-	newLaserPoints = false;
 	sufficientPoints = false;
 	double startTime, endTime;
 
@@ -247,9 +244,9 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		kdtreeSurfPtr = kdtreeSurfLast;
 
 		laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
+		sweepEnd = false;
 	}
-	
-	newLaserPoints = true;
+
 	if (laserCloudSurfPtr->points.size() >= 100)
 	{
 		sufficientPoints = true;
@@ -263,7 +260,7 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 	}
 	timeLastedRec = timeLasted;
 
-	if (newLaserPoints && sufficientPoints)
+	if (sufficientPoints)
 	{
 		newLaserCloudLast = false;
 
@@ -689,75 +686,72 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		}
 	}
 
-	if (newLaserPoints)
+	float rx, ry, rz, tx, ty, tz;
+	AccumulateRotation(transformSum[0], transformSum[1], transformSum[2], 
+	-transform[0], -transform[1] * 1.05, -transform[2], rx, ry, rz);
+
+	float x1 = cos(rz) * (transform[3] - 0) 
+	- sin(rz) * (transform[4] - 0);
+	float y1 = sin(rz) * (transform[3] - 0) 
+	+ cos(rz) * (transform[4] - 0);
+	float z1 = transform[5] * 1.05 - 0;
+
+	float x2 = x1;
+	float y2 = cos(rx) * y1 - sin(rx) * z1;
+	float z2 = sin(rx) * y1 + cos(rx) * z1;
+
+	tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
+	ty = transformSum[4] - y2;
+	tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
+	
+	if (sweepEnd)
 	{
-		float rx, ry, rz, tx, ty, tz;
-		AccumulateRotation(transformSum[0], transformSum[1], transformSum[2], 
-		-transform[0], -transform[1] * 1.05, -transform[2], rx, ry, rz);
-
-		float x1 = cos(rz) * (transform[3] - 0) 
-		- sin(rz) * (transform[4] - 0);
-		float y1 = sin(rz) * (transform[3] - 0) 
-		+ cos(rz) * (transform[4] - 0);
-		float z1 = transform[5] * 1.05 - 0;
-
-		float x2 = x1;
-		float y2 = cos(rx) * y1 - sin(rx) * z1;
-		float z2 = sin(rx) * y1 + cos(rx) * z1;
-
-		tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
-		ty = transformSum[4] - y2;
-		tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
-		
-		if (sweepEnd)
+		int laserCloudCornerLastNum = laserCloudCornerLast->points.size();
+		for (int i = 0; i < laserCloudCornerLastNum; i++)
 		{
-			int laserCloudCornerLastNum = laserCloudCornerLast->points.size();
-			for (int i = 0; i < laserCloudCornerLastNum; i++)
-			{
-				TransformToEnd(&laserCloudCornerLast->points[i], &laserCloudCornerLast->points[i], 
-				startTimeLast, startTimeCur);
-			}
-
-			int laserCloudSurfLastNum = laserCloudSurfLast->points.size();
-			for (int i = 0; i < laserCloudSurfLastNum; i++)
-			{
-				TransformToEnd(&laserCloudSurfLast->points[i], &laserCloudSurfLast->points[i], 
-				startTimeLast, startTimeCur);
-			}
-
-			for (int i = 0; i < 6; i++)
-			{
-				transformRec[i] = transform[i];
-				transform[i] = 0;
-			}
-			transformSum[0] = rx;
-			transformSum[1] = ry;
-			transformSum[2] = rz;
-			transformSum[3] = tx;
-			transformSum[4] = ty;
-			transformSum[5] = tz;
-
-			sensor_msgs::PointCloud2 laserCloudLast2;
-			pcl::toROSMsg(*laserCloudCornerLast + *laserCloudSurfLast, laserCloudLast2);
-			laserCloudLast2.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
-			laserCloudLast2.header.frame_id = "/camera";
-			pubLaserCloudLast2.publish(laserCloudLast2);
+			TransformToEnd(&laserCloudCornerLast->points[i], &laserCloudCornerLast->points[i], 
+			startTimeLast, startTimeCur);
 		}
 
-		geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw(rz, -rx, -ry);
-		
-		laserOdometry.pose.pose.orientation.x = -geoQuat.y;
-		laserOdometry.pose.pose.orientation.y = -geoQuat.z;
-		laserOdometry.pose.pose.orientation.z = geoQuat.x;
-		laserOdometry.pose.pose.orientation.w = geoQuat.w;
-		laserOdometry.pose.pose.position.x = tx;
-		laserOdometry.pose.pose.position.y = ty;
-		laserOdometry.pose.pose.position.z = tz;
-		pubLaserOdometry.publish(laserOdometry);
+		int laserCloudSurfLastNum = laserCloudSurfLast->points.size();
+		for (int i = 0; i < laserCloudSurfLastNum; i++)
+		{
+			TransformToEnd(&laserCloudSurfLast->points[i], &laserCloudSurfLast->points[i], 
+			startTimeLast, startTimeCur);
+		}
 
-		ROS_DEBUG("%f %f %f %f %f %f", transformSum[0], transformSum[1], transformSum[2], 
-		transformSum[3], transformSum[4], transformSum[5]);
+		for (int i = 0; i < 6; i++)
+		{
+			transformRec[i] = transform[i];
+			transform[i] = 0;
+		}
+		transformSum[0] = rx;
+		transformSum[1] = ry;
+		transformSum[2] = rz;
+		transformSum[3] = tx;
+		transformSum[4] = ty;
+		transformSum[5] = tz;
+
+		sensor_msgs::PointCloud2 laserCloudLast2;
+		pcl::toROSMsg(*laserCloudCornerLast + *laserCloudSurfLast, laserCloudLast2);
+		laserCloudLast2.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
+		laserCloudLast2.header.frame_id = "/camera";
+		pubLaserCloudLast2.publish(laserCloudLast2);
 	}
+
+	geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw(rz, -rx, -ry);
+	
+	laserOdometry.pose.pose.orientation.x = -geoQuat.y;
+	laserOdometry.pose.pose.orientation.y = -geoQuat.z;
+	laserOdometry.pose.pose.orientation.z = geoQuat.x;
+	laserOdometry.pose.pose.orientation.w = geoQuat.w;
+	laserOdometry.pose.pose.position.x = tx;
+	laserOdometry.pose.pose.position.y = ty;
+	laserOdometry.pose.pose.position.z = tz;
+	pubLaserOdometry.publish(laserOdometry);
+
+	ROS_DEBUG("%f %f %f %f %f %f", transformSum[0], transformSum[1], transformSum[2], 
+	transformSum[3], transformSum[4], transformSum[5]);
 }
 
 void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLast2)
@@ -814,9 +808,6 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
 	{
 		newLaserCloudLast = true;
 	}
-	
-	
-
 }
 
 int main(int argc, char** argv)
