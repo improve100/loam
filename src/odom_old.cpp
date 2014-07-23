@@ -763,13 +763,8 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
 	startTimeCur = timeLaserCloudLast - initTime;
 
 	// Swich LLast and Last for corner and surf points
-	pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudPointer = laserCloudCornerLLast;
 	laserCloudCornerLLast = laserCloudCornerLast;
-	laserCloudCornerLast = laserCloudPointer;
-
-	laserCloudPointer = laserCloudSurfLLast;
 	laserCloudSurfLLast = laserCloudSurfLast;
-	laserCloudSurfLast = laserCloudPointer;
 
 	// Reconstruct corner and surf points from incoming laser cloud using magic numbers in 'v'
 	pcl::PointCloud<pcl::PointXYZHSV> laserCloudLast;
