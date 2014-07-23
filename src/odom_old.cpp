@@ -61,6 +61,16 @@ ros::Publisher pubLaserOdometry;
 ros::Publisher pubLaserCloudLast2;
 nav_msgs::Odometry laserOdometry;
 
+std::vector<int> pointSearchInd;
+std::vector<float> pointSearchSqDis;
+std::vector<int> pointSelInd;
+
+pcl::PointXYZHSV extreOri, extreSel, extreProj, tripod1, tripod2, tripod3, coeff;
+
+bool sweepEnd = false;
+bool newLaserPoints = false;
+bool sufficientPoints = false;
+
 void TransformToStart(pcl::PointXYZHSV *pi, pcl::PointXYZHSV *po, double startTime, double endTime)
 {
   float s = (pi->h - startTime) / (endTime - startTime);
@@ -279,20 +289,14 @@ int main(int argc, char** argv)
 	laserOdometry.header.frame_id = "/camera_init";
 	laserOdometry.child_frame_id = "/camera";
 	
-	std::vector<int> pointSearchInd;
-	std::vector<float> pointSearchSqDis;
-	std::vector<int> pointSelInd;
-
-	pcl::PointXYZHSV extreOri, extreSel, extreProj, tripod1, tripod2, tripod3, coeff;
-
 	ros::Rate rate(100);
 	while (ros::ok())
 	{
 		ros::spinOnce();
 
-		bool sweepEnd = false;
-		bool newLaserPoints = false;
-		bool sufficientPoints = false;
+		sweepEnd = false;
+		newLaserPoints = false;
+		sufficientPoints = false;
 		double startTime, endTime;
 
 		pcl::PointCloud<pcl::PointXYZHSV>::Ptr extrePointsPtr, laserCloudCornerPtr, laserCloudSurfPtr;
