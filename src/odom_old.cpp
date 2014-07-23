@@ -698,41 +698,6 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 	tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
 	ty = transformSum[4] - y2;
 	tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
-	
-	if (sweepEnd)
-	{
-		int laserCloudCornerLastNum = laserCloudCornerLast->points.size();
-		for (int i = 0; i < laserCloudCornerLastNum; i++)
-		{
-			TransformToEnd(&laserCloudCornerLast->points[i], &laserCloudCornerLast->points[i], 
-			startTimeLast, startTimeCur);
-		}
-
-		int laserCloudSurfLastNum = laserCloudSurfLast->points.size();
-		for (int i = 0; i < laserCloudSurfLastNum; i++)
-		{
-			TransformToEnd(&laserCloudSurfLast->points[i], &laserCloudSurfLast->points[i], 
-			startTimeLast, startTimeCur);
-		}
-
-		for (int i = 0; i < 6; i++)
-		{
-			transformRec[i] = transform[i];
-			transform[i] = 0;
-		}
-		transformSum[0] = rx;
-		transformSum[1] = ry;
-		transformSum[2] = rz;
-		transformSum[3] = tx;
-		transformSum[4] = ty;
-		transformSum[5] = tz;
-
-		sensor_msgs::PointCloud2 laserCloudLast2;
-		pcl::toROSMsg(*laserCloudCornerLast + *laserCloudSurfLast, laserCloudLast2);
-		laserCloudLast2.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
-		laserCloudLast2.header.frame_id = "/camera";
-		pubLaserCloudLast2.publish(laserCloudLast2);
-	}
 
 	geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw(rz, -rx, -ry);
 	
@@ -800,6 +765,43 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
 	{
 		newLaserCloudLast = true;
 	}
+	
+	// From main()
+	float rx, ry, rz, tx, ty, tz;
+	AccumulateRotation(transformSum[0], transformSum[1], transformSum[2], 
+	-transform[0], -transform[1] * 1.05, -transform[2], rx, ry, rz);
+
+	int laserCloudCornerLastNum = laserCloudCornerLast->points.size();
+	for (int i = 0; i < laserCloudCornerLastNum; i++)
+	{
+		TransformToEnd(&laserCloudCornerLast->points[i], &laserCloudCornerLast->points[i], 
+		startTimeLast, startTimeCur);
+	}
+
+	int laserCloudSurfLastNum = laserCloudSurfLast->points.size();
+	for (int i = 0; i < laserCloudSurfLastNum; i++)
+	{
+		TransformToEnd(&laserCloudSurfLast->points[i], &laserCloudSurfLast->points[i], 
+		startTimeLast, startTimeCur);
+	}
+
+	for (int i = 0; i < 6; i++)
+	{
+		transformRec[i] = transform[i];
+		transform[i] = 0;
+	}
+	transformSum[0] = rx;
+	transformSum[1] = ry;
+	transformSum[2] = rz;
+	transformSum[3] = tx;
+	transformSum[4] = ty;
+	transformSum[5] = tz;
+
+	sensor_msgs::PointCloud2 laserCloudLastOut;
+	pcl::toROSMsg(*laserCloudCornerLast + *laserCloudSurfLast, laserCloudLastOut);
+	laserCloudLastOut.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
+	laserCloudLastOut.header.frame_id = "/camera";
+	pubLaserCloudLast2.publish(laserCloudLastOut);
 }
 
 int main(int argc, char** argv)
