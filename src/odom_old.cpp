@@ -185,27 +185,29 @@ void AccumulateRotation(float cx, float cy, float cz, float lx, float ly, float 
 
 void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudExtreCur2)
 {
-  if (!systemInited) {
-    initTime = laserCloudExtreCur2->header.stamp.toSec();
-    systemInited = true;
-  }
-  timeLaserCloudExtreCur = laserCloudExtreCur2->header.stamp.toSec();
-  timeLasted = timeLaserCloudExtreCur - initTime;
+	if (!systemInited)
+	{
+		initTime = laserCloudExtreCur2->header.stamp.toSec();
+		systemInited = true;
+	}
+	timeLaserCloudExtreCur = laserCloudExtreCur2->header.stamp.toSec();
+	timeLasted = timeLaserCloudExtreCur - initTime;
 
-  pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudExtreCur3(new pcl::PointCloud<pcl::PointXYZHSV>());
-  pcl::fromROSMsg(*laserCloudExtreCur2, *laserCloudExtreCur3);
-  int laserCloudExtreCur3Size = laserCloudExtreCur3->points.size();
+	pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudExtreCur3(new pcl::PointCloud<pcl::PointXYZHSV>());
+	pcl::fromROSMsg(*laserCloudExtreCur2, *laserCloudExtreCur3);
+	int laserCloudExtreCur3Size = laserCloudExtreCur3->points.size();
 
-  laserCloudExtreCur->clear();
-  for (int i = 0; i < laserCloudExtreCur3Size; i++) {
-    
-      laserCloudExtreCur->push_back(laserCloudExtreCur3->points[i]);
-  }
-  laserCloudExtreCur3->clear();
+	laserCloudExtreCur->clear();
+	for (int i = 0; i < laserCloudExtreCur3Size; i++)
+	{
+		laserCloudExtreCur->push_back(laserCloudExtreCur3->points[i]);
+	}
+	laserCloudExtreCur3->clear();
 
-  if (timeLasted > 4.0) {
-    newLaserCloudExtreCur = true;
-  }
+	if (timeLasted > 4.0)
+	{
+		newLaserCloudExtreCur = true;
+	}
 }
 
 void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLast2)
