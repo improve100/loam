@@ -426,7 +426,7 @@ int main(int argc, char** argv)
 								} else
 								{
 									if (pointSqDis < minPointSqDis3)
-									{	// Welcome to the 10th intendation level!
+									{	// Welcome to the 10th indentation level!
 										minPointSqDis3 = pointSqDis;
 										minPointInd3 = j;
 									}
@@ -777,25 +777,25 @@ int main(int argc, char** argv)
 		if (newLaserPoints)
 		{
 			float rx, ry, rz, tx, ty, tz;
+			AccumulateRotation(transformSum[0], transformSum[1], transformSum[2], 
+			-transform[0], -transform[1] * 1.05, -transform[2], rx, ry, rz);
+
+			float x1 = cos(rz) * (transform[3] - 0) 
+			- sin(rz) * (transform[4] - 0);
+			float y1 = sin(rz) * (transform[3] - 0) 
+			+ cos(rz) * (transform[4] - 0);
+			float z1 = transform[5] * 1.05 - 0;
+
+			float x2 = x1;
+			float y2 = cos(rx) * y1 - sin(rx) * z1;
+			float z2 = sin(rx) * y1 + cos(rx) * z1;
+
+			tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
+			ty = transformSum[4] - y2;
+			tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
+			
 			if (sweepEnd)
 			{
-				AccumulateRotation(transformSum[0], transformSum[1], transformSum[2], 
-				-transform[0], -transform[1] * 1.05, -transform[2], rx, ry, rz);
-
-				float x1 = cos(rz) * (transform[3] - 0) 
-				- sin(rz) * (transform[4] - 0);
-				float y1 = sin(rz) * (transform[3] - 0) 
-				+ cos(rz) * (transform[4] - 0);
-				float z1 = transform[5] * 1.05 - 0;
-
-				float x2 = x1;
-				float y2 = cos(rx) * y1 - sin(rx) * z1;
-				float z2 = sin(rx) * y1 + cos(rx) * z1;
-
-				tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
-				ty = transformSum[4] - y2;
-				tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
-
 				int laserCloudCornerLastNum = laserCloudCornerLast->points.size();
 				for (int i = 0; i < laserCloudCornerLastNum; i++)
 				{
@@ -811,7 +811,6 @@ int main(int argc, char** argv)
 				}
 
 				TransformReset();
-
 				transformSum[0] = rx;
 				transformSum[1] = ry;
 				transformSum[2] = rz;
@@ -824,24 +823,6 @@ int main(int argc, char** argv)
 				laserCloudLast2.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
 				laserCloudLast2.header.frame_id = "/camera";
 				pubLaserCloudLast2.publish(laserCloudLast2);
-			} else
-			{
-				AccumulateRotation(transformSum[0], transformSum[1], transformSum[2], 
-				-transform[0], -transform[1] * 1.05, -transform[2], rx, ry, rz);
-
-				float x1 = cos(rz) * (transform[3] - 0) 
-				- sin(rz) * (transform[4] - 0);
-				float y1 = sin(rz) * (transform[3] - 0) 
-				+ cos(rz) * (transform[4] - 0);
-				float z1 = transform[5] * 1.05 - 0;
-
-				float x2 = x1;
-				float y2 = cos(rx) * y1 - sin(rx) * z1;
-				float z2 = sin(rx) * y1 + cos(rx) * z1;
-
-				tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
-				ty = transformSum[4] - y2;
-				tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
 			}
 
 			geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw(rz, -rx, -ry);
