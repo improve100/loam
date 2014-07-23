@@ -40,7 +40,6 @@ pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudExtreCur(new pcl::PointCloud<pc
 pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudExtreLast(new pcl::PointCloud<pcl::PointXYZHSV>());
 pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudExtreOri(new pcl::PointCloud<pcl::PointXYZHSV>());
 
-pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudLast(new pcl::PointCloud<pcl::PointXYZHSV>());
 pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudCornerLast(new pcl::PointCloud<pcl::PointXYZHSV>());
 pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudSurfLast(new pcl::PointCloud<pcl::PointXYZHSV>());
 pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudCornerLLast(new pcl::PointCloud<pcl::PointXYZHSV>());
@@ -763,6 +762,7 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
 	startTimeLast = startTimeCur;
 	startTimeCur = timeLaserCloudLast - initTime;
 
+	// Swich LLast and Last for corner and surf points
 	pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudPointer = laserCloudCornerLLast;
 	laserCloudCornerLLast = laserCloudCornerLast;
 	laserCloudCornerLast = laserCloudPointer;
@@ -771,26 +771,27 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
 	laserCloudSurfLLast = laserCloudSurfLast;
 	laserCloudSurfLast = laserCloudPointer;
 
-	laserCloudLast->clear();
-	pcl::fromROSMsg(*laserCloudLast2, *laserCloudLast);
-	int laserCloudLastSize = laserCloudLast->points.size();
+	// Reconstruct corner and surf points from incoming laser cloud using magic numbers in 'v'
+	pcl::PointCloud<pcl::PointXYZHSV> laserCloudLast;
+	pcl::fromROSMsg(*laserCloudLast2, laserCloudLast);
+	int laserCloudLastSize = laserCloudLast.points.size();
 
 	laserCloudExtreLast->clear();
 	laserCloudCornerLast->clear();
 	laserCloudSurfLast->clear();
 	for (int i = 0; i < laserCloudLastSize; i++)
 	{
-		if (fabs(laserCloudLast->points[i].v - 2) < 0.005 || fabs(laserCloudLast->points[i].v + 1) < 0.005)
+		if (fabs(laserCloudLast.points[i].v - 2) < 0.005 || fabs(laserCloudLast.points[i].v + 1) < 0.005)
 		{
-			laserCloudExtreLast->push_back(laserCloudLast->points[i]);
+			laserCloudExtreLast->push_back(laserCloudLast.points[i]);
 		}
-		if (fabs(laserCloudLast->points[i].v - 2) < 0.005 || fabs(laserCloudLast->points[i].v - 1) < 0.005)
+		if (fabs(laserCloudLast.points[i].v - 2) < 0.005 || fabs(laserCloudLast.points[i].v - 1) < 0.005)
 		{
-			laserCloudCornerLast->push_back(laserCloudLast->points[i]);
+			laserCloudCornerLast->push_back(laserCloudLast.points[i]);
 		} 
-		if (fabs(laserCloudLast->points[i].v) < 0.005 || fabs(laserCloudLast->points[i].v + 1) < 0.005)
+		if (fabs(laserCloudLast.points[i].v) < 0.005 || fabs(laserCloudLast.points[i].v + 1) < 0.005)
 		{
-			laserCloudSurfLast->push_back(laserCloudLast->points[i]);
+			laserCloudSurfLast->push_back(laserCloudLast.points[i]);
 		}
 	}
 
