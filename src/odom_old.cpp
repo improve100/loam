@@ -34,7 +34,6 @@ double startTimeLast;
 double timeLaserCloudExtreCur = 0;
 double timeLaserCloudLast = 0;
 
-bool newLaserCloudExtreCur = false;
 bool newLaserCloudLast = false;
 
 pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudExtreCur(new pcl::PointCloud<pcl::PointXYZHSV>());
@@ -211,10 +210,8 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 	}
 	laserCloudExtreCur3->clear();
 
-	if (timeLasted > 4.0)
-	{
-		newLaserCloudExtreCur = true;
-	}
+	if (timeLasted <= 4.0)
+		return;
 	
 	// Everything from main()
 	sweepEnd = false;
@@ -225,53 +222,49 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 	pcl::PointCloud<pcl::PointXYZHSV>::Ptr extrePointsPtr, laserCloudCornerPtr, laserCloudSurfPtr;
 	pcl::KdTreeFLANN<pcl::PointXYZHSV>::Ptr kdtreeCornerPtr, kdtreeSurfPtr;
 
-	if (newLaserCloudExtreCur)
+	if(newLaserCloudLast)
 	{
-		if(newLaserCloudLast)
-		{
-			startTime = startTimeLast;
-			endTime = startTimeCur;
+		startTime = startTimeLast;
+		endTime = startTimeCur;
 
-			extrePointsPtr = laserCloudExtreLast;
-			laserCloudCornerPtr = laserCloudCornerLLast;
-			laserCloudSurfPtr = laserCloudSurfLLast;
-			kdtreeCornerPtr = kdtreeCornerLLast;
-			kdtreeSurfPtr = kdtreeSurfLLast;
-			
-			laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
-			sweepEnd = true;
-		}else
-		{
-			startTime = startTimeCur;
-			endTime = timeLasted;
-
-			extrePointsPtr = laserCloudExtreCur;
-			laserCloudCornerPtr = laserCloudCornerLast;
-			laserCloudSurfPtr = laserCloudSurfLast;
-			kdtreeCornerPtr = kdtreeCornerLast;
-			kdtreeSurfPtr = kdtreeSurfLast;
-
-			laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
-		}
+		extrePointsPtr = laserCloudExtreLast;
+		laserCloudCornerPtr = laserCloudCornerLLast;
+		laserCloudSurfPtr = laserCloudSurfLLast;
+		kdtreeCornerPtr = kdtreeCornerLLast;
+		kdtreeSurfPtr = kdtreeSurfLLast;
 		
-		newLaserPoints = true;
-		if (laserCloudSurfPtr->points.size() >= 100)
-		{
-			sufficientPoints = true;
-		}
-	
-		// Do something with the odometry estimation
-		float s = (timeLasted - timeLastedRec) / (startTimeCur - startTimeLast);
-		for (int i = 0; i < 6; i++)
-		{
-			transform[i] += s * transformRec[i];        
-		}
-		timeLastedRec = timeLasted;
+		laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
+		sweepEnd = true;
+	}else
+	{
+		startTime = startTimeCur;
+		endTime = timeLasted;
+
+		extrePointsPtr = laserCloudExtreCur;
+		laserCloudCornerPtr = laserCloudCornerLast;
+		laserCloudSurfPtr = laserCloudSurfLast;
+		kdtreeCornerPtr = kdtreeCornerLast;
+		kdtreeSurfPtr = kdtreeSurfLast;
+
+		laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
 	}
+	
+	newLaserPoints = true;
+	if (laserCloudSurfPtr->points.size() >= 100)
+	{
+		sufficientPoints = true;
+	}
+
+	// Do something with the odometry estimation
+	float s = (timeLasted - timeLastedRec) / (startTimeCur - startTimeLast);
+	for (int i = 0; i < 6; i++)
+	{
+		transform[i] += s * transformRec[i];        
+	}
+	timeLastedRec = timeLasted;
 
 	if (newLaserPoints && sufficientPoints)
 	{
-		newLaserCloudExtreCur = false;
 		newLaserCloudLast = false;
 
 		int extrePointNum = extrePointsPtr->points.size();
