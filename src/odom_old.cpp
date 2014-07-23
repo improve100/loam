@@ -57,14 +57,6 @@ float transform[6] = {0};
 float transformRec[6] = {0};
 float transformSum[6] = {0};
 
-void TransformReset()
-{
-  for (int i = 0; i < 6; i++) {
-    transformRec[i] = transform[i];
-    transform[i] = 0;
-  }
-}
-
 void TransformToStart(pcl::PointXYZHSV *pi, pcl::PointXYZHSV *po, double startTime, double endTime)
 {
   float s = (pi->h - startTime) / (endTime - startTime);
@@ -810,7 +802,11 @@ int main(int argc, char** argv)
 					startTimeLast, startTimeCur);
 				}
 
-				TransformReset();
+				for (int i = 0; i < 6; i++)
+				{
+					transformRec[i] = transform[i];
+					transform[i] = 0;
+				}
 				transformSum[0] = rx;
 				transformSum[1] = ry;
 				transformSum[2] = rz;
