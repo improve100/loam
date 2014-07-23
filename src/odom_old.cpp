@@ -57,6 +57,10 @@ float transform[6] = {0};
 float transformRec[6] = {0};
 float transformSum[6] = {0};
 
+ros::Publisher pubLaserOdometry;
+ros::Publisher pubLaserCloudLast2;
+nav_msgs::Odometry laserOdometry;
+
 void TransformToStart(pcl::PointXYZHSV *pi, pcl::PointXYZHSV *po, double startTime, double endTime)
 {
   float s = (pi->h - startTime) / (endTime - startTime);
@@ -269,13 +273,12 @@ int main(int argc, char** argv)
 	ros::Subscriber subLaserCloudLast = nh.subscribe<sensor_msgs::PointCloud2> 
 	("/laser_cloud_last", 2, laserCloudLastHandler);
 
-	ros::Publisher pubLaserCloudLast2 = nh.advertise<sensor_msgs::PointCloud2> ("/laser_cloud_last_2", 2);
+	pubLaserCloudLast2 = nh.advertise<sensor_msgs::PointCloud2> ("/laser_cloud_last_2", 2);
 
-	ros::Publisher pubLaserOdometry = nh.advertise<nav_msgs::Odometry> ("/cam_to_init", 5);
-	nav_msgs::Odometry laserOdometry;
+	pubLaserOdometry = nh.advertise<nav_msgs::Odometry> ("/cam_to_init", 5);
 	laserOdometry.header.frame_id = "/camera_init";
 	laserOdometry.child_frame_id = "/camera";
-
+	
 	std::vector<int> pointSearchInd;
 	std::vector<float> pointSearchSqDis;
 	std::vector<int> pointSelInd;
@@ -822,7 +825,7 @@ int main(int argc, char** argv)
 			}
 
 			geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw(rz, -rx, -ry);
-
+			
 			laserOdometry.pose.pose.orientation.x = -geoQuat.y;
 			laserOdometry.pose.pose.orientation.y = -geoQuat.z;
 			laserOdometry.pose.pose.orientation.z = geoQuat.x;
