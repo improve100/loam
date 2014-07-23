@@ -208,7 +208,6 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		return;
 	
 	// Everything from main()
-	bool sufficientPoints = false;
 	double startTime, endTime;
 
 	pcl::PointCloud<pcl::PointXYZHSV>::Ptr extrePointsPtr, laserCloudCornerPtr, laserCloudSurfPtr;
@@ -240,11 +239,6 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
 	}
 
-	if (laserCloudSurfPtr->points.size() >= 100)
-	{
-		sufficientPoints = true;
-	}
-
 	// Do something with the odometry estimation
 	float s = (timeLasted - timeLastedRec) / (startTimeCur - startTimeLast);
 	for (int i = 0; i < 6; i++)
@@ -253,7 +247,7 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 	}
 	timeLastedRec = timeLasted;
 
-	if (sufficientPoints)
+	if (laserCloudSurfPtr->points.size() >= 100)
 	{
 		newLaserCloudLast = false;
 
