@@ -208,7 +208,6 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		return;
 	
 	// Everything from main()
-	bool sweepEnd = false;
 	bool sufficientPoints = false;
 	double startTime, endTime;
 
@@ -227,7 +226,6 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		kdtreeSurfPtr = kdtreeSurfLLast;
 		
 		laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
-		sweepEnd = true;
 	}else
 	{
 		startTime = startTimeCur;
@@ -263,11 +261,7 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		int laserCloudCornerNum = laserCloudCornerPtr->points.size();
 		int laserCloudSurfNum = laserCloudSurfPtr->points.size();
 
-		float st = 1;
-		if (!sweepEnd)
-		{
-			st = (timeLasted - startTime) / (startTimeCur - startTimeLast);
-		}
+		float st = (timeLasted - startTime) / (startTimeCur - startTimeLast);
 		int iterNum = st * 50;
 
 		int pointSelSkipNum = 2;
