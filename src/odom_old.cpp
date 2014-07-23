@@ -65,10 +65,6 @@ std::vector<int> pointSelInd;
 
 pcl::PointXYZHSV extreOri, extreSel, extreProj, tripod1, tripod2, tripod3, coeff;
 
-bool sweepEnd = false;
-bool sufficientPoints = false;
-double startTime, endTime;
-
 void TransformToStart(pcl::PointXYZHSV *pi, pcl::PointXYZHSV *po, double startTime, double endTime)
 {
   float s = (pi->h - startTime) / (endTime - startTime);
@@ -212,7 +208,8 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		return;
 	
 	// Everything from main()
-	sufficientPoints = false;
+	bool sweepEnd = false;
+	bool sufficientPoints = false;
 	double startTime, endTime;
 
 	pcl::PointCloud<pcl::PointXYZHSV>::Ptr extrePointsPtr, laserCloudCornerPtr, laserCloudSurfPtr;
@@ -243,7 +240,6 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		kdtreeSurfPtr = kdtreeSurfLast;
 
 		laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
-		sweepEnd = false;
 	}
 
 	if (laserCloudSurfPtr->points.size() >= 100)
