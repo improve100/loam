@@ -210,52 +210,58 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 
 void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLast2)
 {
-  if (laserCloudLast2->header.stamp.toSec() > timeLaserCloudLast + 0.005) {
-    timeLaserCloudLast = laserCloudLast2->header.stamp.toSec();
-    startTimeLast = startTimeCur;
-    startTimeCur = timeLaserCloudLast - initTime;
+	if (laserCloudLast2->header.stamp.toSec() > timeLaserCloudLast + 0.005)
+	{
+		timeLaserCloudLast = laserCloudLast2->header.stamp.toSec();
+		startTimeLast = startTimeCur;
+		startTimeCur = timeLaserCloudLast - initTime;
 
-    pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudPointer = laserCloudCornerLLast;
-    laserCloudCornerLLast = laserCloudCornerLast;
-    laserCloudCornerLast = laserCloudPointer;
+		pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloudPointer = laserCloudCornerLLast;
+		laserCloudCornerLLast = laserCloudCornerLast;
+		laserCloudCornerLast = laserCloudPointer;
 
-    laserCloudPointer = laserCloudSurfLLast;
-    laserCloudSurfLLast = laserCloudSurfLast;
-    laserCloudSurfLast = laserCloudPointer;
+		laserCloudPointer = laserCloudSurfLLast;
+		laserCloudSurfLLast = laserCloudSurfLast;
+		laserCloudSurfLast = laserCloudPointer;
 
-    laserCloudLast->clear();
-    pcl::fromROSMsg(*laserCloudLast2, *laserCloudLast);
-    int laserCloudLastSize = laserCloudLast->points.size();
+		laserCloudLast->clear();
+		pcl::fromROSMsg(*laserCloudLast2, *laserCloudLast);
+		int laserCloudLastSize = laserCloudLast->points.size();
 
-    laserCloudExtreLast->clear();
-    laserCloudCornerLast->clear();
-    laserCloudSurfLast->clear();
-    for (int i = 0; i < laserCloudLastSize; i++) {
-      if (fabs(laserCloudLast->points[i].v - 2) < 0.005 || fabs(laserCloudLast->points[i].v + 1) < 0.005) {
-        laserCloudExtreLast->push_back(laserCloudLast->points[i]);
-      } 
-      if (fabs(laserCloudLast->points[i].v - 2) < 0.005 || fabs(laserCloudLast->points[i].v - 1) < 0.005) {
-        laserCloudCornerLast->push_back(laserCloudLast->points[i]);
-      } 
-      if (fabs(laserCloudLast->points[i].v) < 0.005 || fabs(laserCloudLast->points[i].v + 1) < 0.005) {
-        laserCloudSurfLast->push_back(laserCloudLast->points[i]);
-      }
-    }
+		laserCloudExtreLast->clear();
+		laserCloudCornerLast->clear();
+		laserCloudSurfLast->clear();
+		for (int i = 0; i < laserCloudLastSize; i++)
+		{
+			if (fabs(laserCloudLast->points[i].v - 2) < 0.005 || fabs(laserCloudLast->points[i].v + 1) < 0.005)
+			{
+				laserCloudExtreLast->push_back(laserCloudLast->points[i]);
+			}
+			if (fabs(laserCloudLast->points[i].v - 2) < 0.005 || fabs(laserCloudLast->points[i].v - 1) < 0.005)
+			{
+				laserCloudCornerLast->push_back(laserCloudLast->points[i]);
+			} 
+			if (fabs(laserCloudLast->points[i].v) < 0.005 || fabs(laserCloudLast->points[i].v + 1) < 0.005)
+			{
+				laserCloudSurfLast->push_back(laserCloudLast->points[i]);
+			}
+		}
 
-    pcl::KdTreeFLANN<pcl::PointXYZHSV>::Ptr kdtreePointer = kdtreeCornerLLast;
-    kdtreeCornerLLast = kdtreeCornerLast;
-    kdtreeCornerLast = kdtreePointer;
-    kdtreeCornerLast->setInputCloud(laserCloudCornerLast);
+		pcl::KdTreeFLANN<pcl::PointXYZHSV>::Ptr kdtreePointer = kdtreeCornerLLast;
+		kdtreeCornerLLast = kdtreeCornerLast;
+		kdtreeCornerLast = kdtreePointer;
+		kdtreeCornerLast->setInputCloud(laserCloudCornerLast);
 
-    kdtreePointer = kdtreeSurfLLast;
-    kdtreeSurfLLast = kdtreeSurfLast;
-    kdtreeSurfLast = kdtreePointer;
-    kdtreeSurfLast->setInputCloud(laserCloudSurfLast);
+		kdtreePointer = kdtreeSurfLLast;
+		kdtreeSurfLLast = kdtreeSurfLast;
+		kdtreeSurfLast = kdtreePointer;
+		kdtreeSurfLast->setInputCloud(laserCloudSurfLast);
 
-    if (timeLasted > 4.0) {
-      newLaserCloudLast = true;
-    }
-  }
+		if (timeLasted > 4.0)
+		{
+			newLaserCloudLast = true;
+		}
+	}
 }
 
 int main(int argc, char** argv)
