@@ -59,6 +59,8 @@ ros::Publisher pubLaserOdometry;
 ros::Publisher pubLaserCloudLast2;
 nav_msgs::Odometry laserOdometry;
 
+tf::TransformBroadcaster* tfBroadcaster;
+
 std::vector<int> pointSearchInd;
 std::vector<float> pointSearchSqDis;
 std::vector<int> pointSelInd;
@@ -687,16 +689,24 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 	ty = transformSum[4] - y2;
 	tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
 
-	geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw(rz, -rx, -ry);
+//	geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw(rz, -rx, -ry);
 	
-	laserOdometry.pose.pose.orientation.x = -geoQuat.y;
-	laserOdometry.pose.pose.orientation.y = -geoQuat.z;
-	laserOdometry.pose.pose.orientation.z = geoQuat.x;
-	laserOdometry.pose.pose.orientation.w = geoQuat.w;
+//	laserOdometry.pose.pose.orientation.x = -geoQuat.y;
+//	laserOdometry.pose.pose.orientation.y = -geoQuat.z;
+//	laserOdometry.pose.pose.orientation.z = geoQuat.x;
+//	laserOdometry.pose.pose.orientation.w = geoQuat.w;
+
+	laserOdometry.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(rx, ry, rz);
+
 	laserOdometry.pose.pose.position.x = tx;
 	laserOdometry.pose.pose.position.y = ty;
 	laserOdometry.pose.pose.position.z = tz;
 	pubLaserOdometry.publish(laserOdometry);
+
+	// Publish via tf
+	
+	tf::Transform tTF(tf::Quaternion(rx, ry, rz), tf::Vector3(tx, ty, tz));
+	tfBroadcaster->sendTransform(tf::StampedTransform(tTF, laserOdometry.header.stamp, "laser_odom", "camera"));
 
 	ROS_DEBUG("%f %f %f %f %f %f", transformSum[0], transformSum[1], transformSum[2], 
 	transformSum[3], transformSum[4], transformSum[5]);
@@ -796,6 +806,8 @@ int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "laserOdometry");
 	ros::NodeHandle nh;
+
+	tfBroadcaster = new tf::TransformBroadcaster();
 
 	ros::Subscriber subLaserCloudExtreCur = nh.subscribe<sensor_msgs::PointCloud2> 
 	("/laser_cloud_extre_cur", 2, laserCloudExtreCurHandler);
