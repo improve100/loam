@@ -32,8 +32,8 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn)
 	{
 		p = pclIn->points[i];
 		pclIn->points[i].x = p.z;
-		pclIn->points[i].y = -p.x;
-		pclIn->points[i].z = -p.y;
+		pclIn->points[i].y = p.x;
+		pclIn->points[i].z = p.y;
 	}
 	
 	// Republish the transformed cloud
