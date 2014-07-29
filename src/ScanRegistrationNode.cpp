@@ -8,6 +8,7 @@
 loam::ScanRegistration* gScanRegistration;
 ros::Publisher* gCurrentCloudPublisher;
 ros::Publisher* gLastCloudPublisher;
+ros::Publisher* gScanPublisher;
 
 double currentSweepStamp;
 double lastSweepStamp;
@@ -23,6 +24,24 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudIn)
 	currentSweepStamp = laserCloudIn->header.stamp.toSec();
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pclIn(new pcl::PointCloud<pcl::PointXYZ>());
 	pcl::fromROSMsg(*laserCloudIn, *pclIn);
+	
+	// Switch coordinates according to LOAM
+	unsigned int pclSize = pclIn->size();
+	pcl::PointXYZ p;
+	for(unsigned int i; i < pclSize; i++)
+	{
+		p = pclIn->points[i];
+		pclIn->points[i].x = p.z;
+		pclIn->points[i].y = -p.x;
+		pclIn->points[i].z = -p.y;
+	}
+	
+	// Republish the transformed cloud
+	sensor_msgs::PointCloud2 fixedScan;
+    pcl::toROSMsg(*pclIn, fixedScan);
+    fixedScan.header.stamp = laserCloudIn->header.stamp;
+    fixedScan.header.frame_id = "/camera";
+    gScanPublisher->publish(fixedScan);
 	
 	// Add new scan to current point cloud
 	gScanRegistration->addScan(pclIn, laserCloudIn->header.stamp.toSec());
@@ -75,9 +94,11 @@ int main(int argc, char **argv)
 	ros::Subscriber sweepSubscriber = n.subscribe<std_msgs::Header>("sweep_trigger", 5, sweepHandler);
 	ros::Publisher currentCloudPublisher = n.advertise<sensor_msgs::PointCloud2>("laser_cloud_extre_cur", 2);
 	ros::Publisher lastCloudPublisher = n.advertise<sensor_msgs::PointCloud2>("laser_cloud_last", 2);
+	ros::Publisher scanPublisher = n.advertise<sensor_msgs::PointCloud2>("fixed_scan", 2);
 	
 	gCurrentCloudPublisher = &currentCloudPublisher;
 	gLastCloudPublisher = &lastCloudPublisher;
+	gScanPublisher = &scanPublisher;
 	
 	spin();
 	
