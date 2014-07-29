@@ -55,10 +55,7 @@ float transform[6] = {0};
 float transformRec[6] = {0};
 float transformSum[6] = {0};
 
-ros::Publisher pubLaserOdometry;
 ros::Publisher pubLaserCloudLast2;
-nav_msgs::Odometry laserOdometry;
-
 tf::TransformBroadcaster* tfBroadcaster;
 
 std::vector<int> pointSearchInd;
@@ -225,8 +222,6 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		laserCloudSurfPtr = laserCloudSurfLLast;
 		kdtreeCornerPtr = kdtreeCornerLLast;
 		kdtreeSurfPtr = kdtreeSurfLLast;
-		
-		laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
 	}else
 	{
 		startTime = startTimeCur;
@@ -237,8 +232,6 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		laserCloudSurfPtr = laserCloudSurfLast;
 		kdtreeCornerPtr = kdtreeCornerLast;
 		kdtreeSurfPtr = kdtreeSurfLast;
-
-		laserOdometry.header.stamp = ros::Time().fromSec(timeLaserCloudExtreCur);
 	}
 
 	// Do something with the odometry estimation
@@ -671,44 +664,13 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		}
 	}
 
-	float rx, ry, rz, tx, ty, tz;
-	AccumulateRotation(transformSum[0], transformSum[1], transformSum[2], 
-	-transform[0], -transform[1] * 1.05, -transform[2], rx, ry, rz);
-
-	float x1 = cos(rz) * (transform[3] - 0) 
-	- sin(rz) * (transform[4] - 0);
-	float y1 = sin(rz) * (transform[3] - 0) 
-	+ cos(rz) * (transform[4] - 0);
-	float z1 = transform[5] * 1.05 - 0;
-
-	float x2 = x1;
-	float y2 = cos(rx) * y1 - sin(rx) * z1;
-	float z2 = sin(rx) * y1 + cos(rx) * z1;
-
-	tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
-	ty = transformSum[4] - y2;
-	tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
-
-	geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw(rz, -rx, -ry);
-	
-	laserOdometry.pose.pose.orientation.x = -geoQuat.y;
-	laserOdometry.pose.pose.orientation.y = -geoQuat.z;
-	laserOdometry.pose.pose.orientation.z = geoQuat.x;
-	laserOdometry.pose.pose.orientation.w = geoQuat.w;
-	laserOdometry.pose.pose.position.x = tx;
-	laserOdometry.pose.pose.position.y = ty;
-	laserOdometry.pose.pose.position.z = tz;
-	pubLaserOdometry.publish(laserOdometry);
-
 	// Publish via tf
-	geometry_msgs::Quaternion q1 = tf::createQuaternionMsgFromRollPitchYaw(transform[2], -transform[0], -transform[1]);
-	tf::Transform tf1(tf::Quaternion(-q1.y, -q1.z, q1.x, q1.w), tf::Vector3(transform[3], transform[4], transform[5]));
+	tf::Transform tf1(tf::Quaternion(transform[0], transform[1], transform[2]), tf::Vector3(transform[3], transform[4], transform[5]));
 	tf1 = tf1.inverse();
-	tfBroadcaster->sendTransform(tf::StampedTransform(tf1, laserOdometry.header.stamp, "transformSum", "camera"));
+	tfBroadcaster->sendTransform(tf::StampedTransform(tf1, laserCloudExtreCur2->header.stamp, "transformSum", "camera"));
 	
-	geometry_msgs::Quaternion q3 = tf::createQuaternionMsgFromRollPitchYaw(transformSum[2], -transformSum[0], -transformSum[1]);
-	tf::Transform tf3(tf::Quaternion(-q3.y, -q3.z, q3.x, q3.w), tf::Vector3(transformSum[3], transformSum[4], transformSum[5]));
-	tfBroadcaster->sendTransform(tf::StampedTransform(tf3, laserOdometry.header.stamp, "camera_init", "transformSum"));
+	tf::Transform tf3(tf::Quaternion(transformSum[0], transformSum[1], transformSum[2]), tf::Vector3(transformSum[3], transformSum[4], transformSum[5]));
+	tfBroadcaster->sendTransform(tf::StampedTransform(tf3, laserCloudExtreCur2->header.stamp, "camera_init", "transformSum"));
 }
 
 void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLast2)
@@ -830,10 +792,6 @@ int main(int argc, char** argv)
 	("/laser_cloud_last", 2, laserCloudLastHandler);
 
 	pubLaserCloudLast2 = nh.advertise<sensor_msgs::PointCloud2> ("/laser_cloud_last_2", 2);
-
-	pubLaserOdometry = nh.advertise<nav_msgs::Odometry> ("/cam_to_init", 5);
-	laserOdometry.header.frame_id = "/camera_init";
-	laserOdometry.child_frame_id = "/camera";
 	
 	ros::spin();
 

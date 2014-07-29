@@ -10,6 +10,7 @@
 
 #include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 
 #include <opencv/cv.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -20,6 +21,8 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
+tf::TransformListener* tfListener;
+
 const double PI = 3.1415926;
 const double rad2deg = 180 / PI;
 const double deg2rad = PI / 180;
@@ -28,7 +31,6 @@ double timeLaserCloudLast;
 double timeLaserOdometry;
 
 bool newLaserCloudLast = false;
-bool newLaserOdometry = false;
 
 const int laserCloudCenWidth = 5;
 const int laserCloudCenHeight = 5;
@@ -65,6 +67,30 @@ float transformAftMapped[6] = {0};
 
 void transformAssociateToMap()
 {
+  // Get transform from tf
+  tf::StampedTransform tf_transform;
+  try
+  {
+	tfListener->lookupTransform("camera", "camera_init", ros::Time(0), tf_transform);
+  }
+  catch(tf::TransformException e)
+  {
+    ROS_WARN("%s", e.what());
+  }
+
+  double roll, pitch, yaw;
+  tf::Matrix3x3(tf_transform.getRotation()).getRPY(roll, pitch, yaw);
+
+  transformSum[0] = roll;
+  transformSum[1] = pitch;
+  transformSum[2] = yaw;
+  transformSum[3] = tf_transform.getOrigin().getX();
+  transformSum[4] = tf_transform.getOrigin().getY();
+  transformSum[5] = tf_transform.getOrigin().getZ();
+  
+  timeLaserOdometry = tf_transform.stamp_.toSec();
+	
+  // Use it
   float x1 = cos(transformSum[1]) * (transformBefMapped[3] - transformSum[3]) 
            - sin(transformSum[1]) * (transformBefMapped[5] - transformSum[5]);
   float y1 = transformBefMapped[4] - transformSum[4];
@@ -192,35 +218,15 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
   newLaserCloudLast = true;
 }
 
-void laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& laserOdometry)
-{
-  timeLaserOdometry = laserOdometry->header.stamp.toSec();
-
-  double roll, pitch, yaw;
-  geometry_msgs::Quaternion geoQuat = laserOdometry->pose.pose.orientation;
-  tf::Matrix3x3(tf::Quaternion(geoQuat.z, -geoQuat.x, -geoQuat.y, geoQuat.w)).getRPY(roll, pitch, yaw);
-
-  transformSum[0] = -pitch;
-  transformSum[1] = -yaw;
-  transformSum[2] = roll;
-
-  transformSum[3] = laserOdometry->pose.pose.position.x;
-  transformSum[4] = laserOdometry->pose.pose.position.y;
-  transformSum[5] = laserOdometry->pose.pose.position.z;
-
-  newLaserOdometry = true;
-}
-
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "laserMapping");
   ros::NodeHandle nh;
 
+  tfListener = new tf::TransformListener(nh);
+
   ros::Subscriber subLaserCloudLast2 = nh.subscribe<sensor_msgs::PointCloud2> 
                                        ("/laser_cloud_last_2", 2, laserCloudLastHandler);
-
-  ros::Subscriber subLaserOdometry = nh.subscribe<nav_msgs::Odometry> 
-                                     ("/cam_to_init", 5, laserOdometryHandler);
 
   ros::Publisher pubLaserCloudSurround = nh.advertise<sensor_msgs::PointCloud2> 
                                          ("/laser_cloud_surround", 1);
@@ -257,9 +263,9 @@ int main(int argc, char** argv)
   while (status) {
     ros::spinOnce();
 
-    if (newLaserCloudLast && newLaserOdometry && fabs(timeLaserCloudLast - timeLaserOdometry) < 0.005) {
+    if (newLaserCloudLast) // && newLaserOdometry && fabs(timeLaserCloudLast - timeLaserOdometry) < 0.005) {
+	{
       newLaserCloudLast = false;
-      newLaserOdometry = false;
 
       transformAssociateToMap();
 
@@ -746,5 +752,6 @@ int main(int argc, char** argv)
     cv::waitKey(10);
   }
 
+  delete tfListener;
   return 0;
 }
