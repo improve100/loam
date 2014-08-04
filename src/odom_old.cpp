@@ -697,7 +697,7 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 	// Publish via tf	
 	tfTransform.setRotation(tf::Quaternion(transform[0], transform[1], transform[2]));
 	tfTransform.setOrigin(tf::Vector3(transform[3], transform[4], transform[5]));
-	tfBroadcaster->sendTransform(tf::StampedTransform(tfTransform, laserCloudExtreCur2->header.stamp, "transformSum", "camera"));
+	tfBroadcaster->sendTransform(tf::StampedTransform(tfTransform.inverse(), laserCloudExtreCur2->header.stamp, "transformSum", "camera"));
 	
 	tfTransformSum.setRotation(tf::Quaternion(transformSum[0], transformSum[1], transformSum[2]));
 	tfTransformSum.setOrigin(tf::Vector3(transformSum[3], transformSum[4], transformSum[5]));
