@@ -740,9 +740,16 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
 	float y2 = cos(rx) * y1 - sin(rx) * z1;
 	float z2 = sin(rx) * y1 + cos(rx) * z1;
 
-        tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
-        ty = transformSum[4] - y2;
-        tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
+	tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
+	ty = transformSum[4] - y2;
+	tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
+
+	transformSum[0] = rx;
+	transformSum[1] = ry;
+	transformSum[2] = rz;
+	transformSum[3] = tx;
+	transformSum[4] = ty;
+	transformSum[5] = tz;
 
 
 	int laserCloudCornerLastNum = laserCloudCornerLast->points.size();
@@ -764,12 +771,6 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
 		transformRec[i] = transform[i];
 		transform[i] = 0;
 	}
-	transformSum[0] = rx;
-	transformSum[1] = ry;
-	transformSum[2] = rz;
-	transformSum[3] = tx;
-	transformSum[4] = ty;
-	transformSum[5] = tz;
 
 	sensor_msgs::PointCloud2 laserCloudLastOut;
 	pcl::toROSMsg(*laserCloudCornerLast + *laserCloudSurfLast, laserCloudLastOut);
