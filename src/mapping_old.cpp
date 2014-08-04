@@ -23,6 +23,13 @@
 
 tf::TransformListener* tfListener;
 
+nav_msgs::Odometry odomBefMapped;
+nav_msgs::Odometry odomAftMapped;
+
+ros::Publisher pubLaserCloudSurround;
+ros::Publisher pubOdomBefMapped;
+ros::Publisher pubOdomAftMapped;
+
 const double PI = 3.1415926;
 const double rad2deg = 180 / PI;
 const double deg2rad = PI / 180;
@@ -62,6 +69,18 @@ float transformIncre[6] = {0};
 float transformTobeMapped[6] = {0};
 float transformBefMapped[6] = {0};
 float transformAftMapped[6] = {0};
+
+pcl::PointXYZHSV pointOri, pointSel, pointProj, coeff;
+std::vector<int> pointSearchInd;
+std::vector<float> pointSearchSqDis;
+
+cv::Mat matA0(5, 3, CV_32F, cv::Scalar::all(0));
+cv::Mat matB0(5, 1, CV_32F, cv::Scalar::all(-1));
+cv::Mat matX0(3, 1, CV_32F, cv::Scalar::all(0));
+
+cv::Mat matA1(3, 3, CV_32F, cv::Scalar::all(0));
+cv::Mat matD1(1, 3, CV_32F, cv::Scalar::all(0));
+cv::Mat matV1(3, 3, CV_32F, cv::Scalar::all(0));
 
 void transformAssociateToMap()
 {
@@ -349,23 +368,6 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
 		{
 			laserCloudOri->clear();
 			coeffSel->clear();
-
-			pcl::PointXYZHSV pointOri, pointSel, pointProj, coeff;
-			std::vector<int> pointSearchInd;
-			std::vector<float> pointSearchSqDis;
-			
-			cv::Mat matA0(5, 3, CV_32F, cv::Scalar::all(0));
-			cv::Mat matB0(5, 1, CV_32F, cv::Scalar::all(-1));
-			cv::Mat matX0(3, 1, CV_32F, cv::Scalar::all(0));
-
-			cv::Mat matA1(3, 3, CV_32F, cv::Scalar::all(0));
-			cv::Mat matD1(1, 3, CV_32F, cv::Scalar::all(0));
-			cv::Mat matV1(3, 3, CV_32F, cv::Scalar::all(0));
-
-			for (int i = 0; i < laserCloudNum; i++)
-			{
-				laserCloudArray[i].reset(new pcl::PointCloud<pcl::PointXYZHSV>());
-			}
 
 			for (int i = 0; i < laserCloudLastNum; i++)
 			{
@@ -731,17 +733,20 @@ int main(int argc, char** argv)
 	tfListener = new tf::TransformListener(nh);
 
 	ros::Subscriber subLaserCloudLast2 = nh.subscribe<sensor_msgs::PointCloud2> ("/laser_cloud_last_2", 2, laserCloudLastHandler);
-	ros::Publisher pubLaserCloudSurround = nh.advertise<sensor_msgs::PointCloud2> ("/laser_cloud_surround", 1);
-	ros::Publisher pubOdomBefMapped = nh.advertise<nav_msgs::Odometry> ("/bef_mapped_to_init_2", 5);
+	pubLaserCloudSurround = nh.advertise<sensor_msgs::PointCloud2> ("/laser_cloud_surround", 1);
+	pubOdomBefMapped = nh.advertise<nav_msgs::Odometry> ("/bef_mapped_to_init_2", 5);
 
-	nav_msgs::Odometry odomBefMapped;
 	odomBefMapped.header.frame_id = "/camera_init_2";
 	odomBefMapped.child_frame_id = "/bef_mapped";
 
-	ros::Publisher pubOdomAftMapped = nh.advertise<nav_msgs::Odometry> ("/aft_mapped_to_init_2", 5);
-	nav_msgs::Odometry odomAftMapped;
+	pubOdomAftMapped = nh.advertise<nav_msgs::Odometry> ("/aft_mapped_to_init_2", 5);
 	odomAftMapped.header.frame_id = "/camera_init_2";
 	odomAftMapped.child_frame_id = "/aft_mapped";
+
+	for (int i = 0; i < laserCloudNum; i++)
+	{
+		laserCloudArray[i].reset(new pcl::PointCloud<pcl::PointXYZHSV>());
+	}
 
 	ros::spin();
 
