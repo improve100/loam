@@ -19,6 +19,8 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
+#define MAGIC_PARAM 1.0
+
 const double PI = 3.1415926;
 const double rad2deg = 180 / PI;
 const double deg2rad = PI / 180;
@@ -163,23 +165,47 @@ void TransformToEnd(pcl::PointXYZHSV *pi, pcl::PointXYZHSV *po, double startTime
   po->v = pi->v;
 }
 
-void AccumulateRotation(float cx, float cy, float cz, float lx, float ly, float lz, 
-                        float &ox, float &oy, float &oz)
+void AccumulateRotation()
 {
-  float srx = cos(lx)*cos(cx)*sin(ly)*sin(cz) - cos(cx)*cos(cz)*sin(lx) - cos(lx)*cos(ly)*sin(cx);
-  ox = -asin(srx);
+	float cx = transformSum[0];
+	float cy = transformSum[1];
+	float cz = transformSum[2];
+	
+	float lx = -transform[0];
+	float ly = -transform[1] * MAGIC_PARAM;
+	float lz = -transform[2];
+	
+	float srx = cos(lx)*cos(cx)*sin(ly)*sin(cz) - cos(cx)*cos(cz)*sin(lx) - cos(lx)*cos(ly)*sin(cx);
+	float rx = -asin(srx);
 
-  float srycrx = sin(lx)*(cos(cy)*sin(cz) - cos(cz)*sin(cx)*sin(cy)) + cos(lx)*sin(ly)*(cos(cy)*cos(cz) 
-               + sin(cx)*sin(cy)*sin(cz)) + cos(lx)*cos(ly)*cos(cx)*sin(cy);
-  float crycrx = cos(lx)*cos(ly)*cos(cx)*cos(cy) - cos(lx)*sin(ly)*(cos(cz)*sin(cy) 
-               - cos(cy)*sin(cx)*sin(cz)) - sin(lx)*(sin(cy)*sin(cz) + cos(cy)*cos(cz)*sin(cx));
-  oy = atan2(srycrx / cos(ox), crycrx / cos(ox));
+	float srycrx = sin(lx)*(cos(cy)*sin(cz) - cos(cz)*sin(cx)*sin(cy)) + cos(lx)*sin(ly)*(cos(cy)*cos(cz) 
+			   + sin(cx)*sin(cy)*sin(cz)) + cos(lx)*cos(ly)*cos(cx)*sin(cy);
+	float crycrx = cos(lx)*cos(ly)*cos(cx)*cos(cy) - cos(lx)*sin(ly)*(cos(cz)*sin(cy) 
+			   - cos(cy)*sin(cx)*sin(cz)) - sin(lx)*(sin(cy)*sin(cz) + cos(cy)*cos(cz)*sin(cx));
+	float ry = atan2(srycrx / cos(rx), crycrx / cos(rx));
 
-  float srzcrx = sin(cx)*(cos(lz)*sin(ly) - cos(ly)*sin(lx)*sin(lz)) + cos(cx)*sin(cz)*(cos(ly)*cos(lz) 
-               + sin(lx)*sin(ly)*sin(lz)) + cos(lx)*cos(cx)*cos(cz)*sin(lz);
-  float crzcrx = cos(lx)*cos(lz)*cos(cx)*cos(cz) - cos(cx)*sin(cz)*(cos(ly)*sin(lz) 
-               - cos(lz)*sin(lx)*sin(ly)) - sin(cx)*(sin(ly)*sin(lz) + cos(ly)*cos(lz)*sin(lx));
-  oz = atan2(srzcrx / cos(ox), crzcrx / cos(ox));
+	float srzcrx = sin(cx)*(cos(lz)*sin(ly) - cos(ly)*sin(lx)*sin(lz)) + cos(cx)*sin(cz)*(cos(ly)*cos(lz) 
+			   + sin(lx)*sin(ly)*sin(lz)) + cos(lx)*cos(cx)*cos(cz)*sin(lz);
+	float crzcrx = cos(lx)*cos(lz)*cos(cx)*cos(cz) - cos(cx)*sin(cz)*(cos(ly)*sin(lz) 
+			   - cos(lz)*sin(lx)*sin(ly)) - sin(cx)*(sin(ly)*sin(lz) + cos(ly)*cos(lz)*sin(lx));
+	float rz = atan2(srzcrx / cos(rx), crzcrx / cos(rx));
+
+    float x1 = cos(rz) * (transform[3]) 
+			 - sin(rz) * (transform[4]);
+	float y1 = sin(rz) * (transform[3]) 
+			 + cos(rz) * (transform[4]);
+	float z1 = transform[5] * MAGIC_PARAM;
+
+	float x2 = x1;
+	float y2 = cos(rx) * y1 - sin(rx) * z1;
+	float z2 = sin(rx) * y1 + cos(rx) * z1;
+
+	transformSum[0] = rx;
+	transformSum[1] = ry;
+	transformSum[2] = rz;
+	transformSum[3] = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
+	transformSum[4] = transformSum[4] - y2;
+	transformSum[5] = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
 }
 
 void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudExtreCur2)
@@ -726,31 +752,8 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
 	}
 	
 	// From main()
-	float rx, ry, rz, tx, ty, tz;
-	AccumulateRotation(transformSum[0], transformSum[1], transformSum[2], 
-	-transform[0], -transform[1] * 1.05, -transform[2], rx, ry, rz);
-
-   float x1 = cos(rz) * (transform[3]) 
-			 - sin(rz) * (transform[4]);
-	float y1 = sin(rz) * (transform[3]) 
-			 + cos(rz) * (transform[4]);
-	float z1 = transform[5] * 1.05;
-
-	float x2 = x1;
-	float y2 = cos(rx) * y1 - sin(rx) * z1;
-	float z2 = sin(rx) * y1 + cos(rx) * z1;
-
-	tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
-	ty = transformSum[4] - y2;
-	tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
-
-	transformSum[0] = rx;
-	transformSum[1] = ry;
-	transformSum[2] = rz;
-	transformSum[3] = tx;
-	transformSum[4] = ty;
-	transformSum[5] = tz;
-
+//	float rx, ry, rz, tx, ty, tz;
+	AccumulateRotation();
 
 	int laserCloudCornerLastNum = laserCloudCornerLast->points.size();
 	for (int i = 0; i < laserCloudCornerLastNum; i++)
