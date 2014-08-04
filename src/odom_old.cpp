@@ -57,6 +57,10 @@ float transform[6] = {0};
 float transformRec[6] = {0};
 float transformSum[6] = {0};
 
+tf::Transform tfTransform;
+tf::Transform tfTransformSum;
+tf::Transform tfTransformRec;
+
 ros::Publisher pubLaserCloudLast2;
 tf::TransformBroadcaster* tfBroadcaster;
 
@@ -690,13 +694,14 @@ void laserCloudExtreCurHandler(const sensor_msgs::PointCloud2ConstPtr& laserClou
 		}
 	}
 
-	// Publish via tf
-	tf::Transform tf1(tf::Quaternion(transform[0], transform[1], transform[2]), tf::Vector3(transform[3], transform[4], transform[5]));
-	tf1 = tf1.inverse();
-	tfBroadcaster->sendTransform(tf::StampedTransform(tf1, laserCloudExtreCur2->header.stamp, "transformSum", "camera"));
+	// Publish via tf	
+	tfTransform.setRotation(tf::Quaternion(transform[0], transform[1], transform[2]));
+	tfTransform.setOrigin(tf::Vector3(transform[3], transform[4], transform[5]));
+	tfBroadcaster->sendTransform(tf::StampedTransform(tfTransform, laserCloudExtreCur2->header.stamp, "transformSum", "camera"));
 	
-	tf::Transform tf3(tf::Quaternion(transformSum[0], transformSum[1], transformSum[2]), tf::Vector3(transformSum[3], transformSum[4], transformSum[5]));
-	tfBroadcaster->sendTransform(tf::StampedTransform(tf3, laserCloudExtreCur2->header.stamp, "camera_init", "transformSum"));
+	tfTransformSum.setRotation(tf::Quaternion(transformSum[0], transformSum[1], transformSum[2]));
+	tfTransformSum.setOrigin(tf::Vector3(transformSum[3], transformSum[4], transformSum[5]));
+	tfBroadcaster->sendTransform(tf::StampedTransform(tfTransformSum, laserCloudExtreCur2->header.stamp, "camera_init", "transformSum"));
 }
 
 void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLast2)
