@@ -22,6 +22,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 
 tf::TransformListener* tfListener;
+tf::TransformBroadcaster* tfBroadcaster;
 
 ros::Publisher pubLaserCloudSurround;
 
@@ -700,6 +701,7 @@ int main(int argc, char** argv)
 	ros::NodeHandle nh;
 
 	tfListener = new tf::TransformListener(nh);
+	tfBroadcaster = new tf::TransformBroadcaster();
 
 	ros::Subscriber subLaserCloudLast2 = nh.subscribe<sensor_msgs::PointCloud2> ("/laser_cloud_last_2", 2, laserCloudLastHandler);
 	pubLaserCloudSurround = nh.advertise<sensor_msgs::PointCloud2> ("/laser_cloud_surround", 1);
@@ -709,8 +711,21 @@ int main(int argc, char** argv)
 		laserCloudArray[i].reset(new pcl::PointCloud<pcl::PointXYZHSV>());
 	}
 
-	ros::spin();
+	ros::Rate r(10);
+	while(ros::ok())
+	{
+		ros::spinOnce();
+		
+		// Publish via tf	
+		tf::Transform tfTransform;
+		tfTransform.setRotation(tf::Quaternion(transformAftMapped[0], transformAftMapped[1], transformAftMapped[2]));
+		tfTransform.setOrigin(tf::Vector3(transformAftMapped[3], transformAftMapped[4], transformAftMapped[5]));
+		tfBroadcaster->sendTransform(tf::StampedTransform(tfTransform.inverse(), ros::Time(0), "camera_init_2", "camera_2"));
+		
+		r.sleep();
+	}
 
 	delete tfListener;
+	delete tfBroadcaster;
 	return 0;
 }
