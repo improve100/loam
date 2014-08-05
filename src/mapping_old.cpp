@@ -23,12 +23,7 @@
 
 tf::TransformListener* tfListener;
 
-nav_msgs::Odometry odomBefMapped;
-nav_msgs::Odometry odomAftMapped;
-
 ros::Publisher pubLaserCloudSurround;
-ros::Publisher pubOdomBefMapped;
-ros::Publisher pubOdomAftMapped;
 
 const double PI = 3.1415926;
 const double rad2deg = 180 / PI;
@@ -697,32 +692,6 @@ void laserCloudLastHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudLas
 	laserCloudSurround2.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
 	laserCloudSurround2.header.frame_id = "/camera_init_2";
 	pubLaserCloudSurround.publish(laserCloudSurround2);
-
-	geometry_msgs::Quaternion geoQuat = tf::createQuaternionMsgFromRollPitchYaw
-	(transformBefMapped[2], -transformBefMapped[0], -transformBefMapped[1]);
-
-	odomBefMapped.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
-	odomBefMapped.pose.pose.orientation.x = -geoQuat.y;
-	odomBefMapped.pose.pose.orientation.y = -geoQuat.z;
-	odomBefMapped.pose.pose.orientation.z = geoQuat.x;
-	odomBefMapped.pose.pose.orientation.w = geoQuat.w;
-	odomBefMapped.pose.pose.position.x = transformBefMapped[3];
-	odomBefMapped.pose.pose.position.y = transformBefMapped[4];
-	odomBefMapped.pose.pose.position.z = transformBefMapped[5];
-	pubOdomBefMapped.publish(odomBefMapped);
-
-	geoQuat = tf::createQuaternionMsgFromRollPitchYaw
-	(transformAftMapped[2], -transformAftMapped[0], -transformAftMapped[1]);
-
-	odomAftMapped.header.stamp = ros::Time().fromSec(timeLaserCloudLast);
-	odomAftMapped.pose.pose.orientation.x = -geoQuat.y;
-	odomAftMapped.pose.pose.orientation.y = -geoQuat.z;
-	odomAftMapped.pose.pose.orientation.z = geoQuat.x;
-	odomAftMapped.pose.pose.orientation.w = geoQuat.w;
-	odomAftMapped.pose.pose.position.x = transformAftMapped[3];
-	odomAftMapped.pose.pose.position.y = transformAftMapped[4];
-	odomAftMapped.pose.pose.position.z = transformAftMapped[5];
-	pubOdomAftMapped.publish(odomAftMapped);
 }
 
 int main(int argc, char** argv)
@@ -734,14 +703,6 @@ int main(int argc, char** argv)
 
 	ros::Subscriber subLaserCloudLast2 = nh.subscribe<sensor_msgs::PointCloud2> ("/laser_cloud_last_2", 2, laserCloudLastHandler);
 	pubLaserCloudSurround = nh.advertise<sensor_msgs::PointCloud2> ("/laser_cloud_surround", 1);
-	pubOdomBefMapped = nh.advertise<nav_msgs::Odometry> ("/bef_mapped_to_init_2", 5);
-
-	odomBefMapped.header.frame_id = "/camera_init_2";
-	odomBefMapped.child_frame_id = "/bef_mapped";
-
-	pubOdomAftMapped = nh.advertise<nav_msgs::Odometry> ("/aft_mapped_to_init_2", 5);
-	odomAftMapped.header.frame_id = "/camera_init_2";
-	odomAftMapped.child_frame_id = "/aft_mapped";
 
 	for (int i = 0; i < laserCloudNum; i++)
 	{
