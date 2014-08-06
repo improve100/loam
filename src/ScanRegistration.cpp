@@ -64,6 +64,67 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 		laserCloud->points[i].s = diffX * diffX + diffY * diffY + diffZ * diffZ; // c-Value
 	}
 
+	// This is probably the filtering of shadowed points
+	for (int i = 5; i < cloudSize - 6; i++)
+	{
+		float diffX = laserCloud->points[i + 1].x - laserCloud->points[i].x;
+		float diffY = laserCloud->points[i + 1].y - laserCloud->points[i].y;
+		float diffZ = laserCloud->points[i + 1].z - laserCloud->points[i].z;
+		float diff = diffX * diffX + diffY * diffY + diffZ * diffZ;
+
+		if (diff > 0.05)
+		{
+			float depth1 = sqrt(laserCloud->points[i].x * laserCloud->points[i].x + laserCloud->points[i].y * laserCloud->points[i].y + laserCloud->points[i].z * laserCloud->points[i].z);
+			float depth2 = sqrt(laserCloud->points[i + 1].x * laserCloud->points[i + 1].x + laserCloud->points[i + 1].y * laserCloud->points[i + 1].y + laserCloud->points[i + 1].z * laserCloud->points[i + 1].z);
+
+			if (depth1 > depth2)
+			{
+				diffX = laserCloud->points[i + 1].x - laserCloud->points[i].x * depth2 / depth1;
+				diffY = laserCloud->points[i + 1].y - laserCloud->points[i].y * depth2 / depth1;
+				diffZ = laserCloud->points[i + 1].z - laserCloud->points[i].z * depth2 / depth1;
+
+				if (sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ) / depth2 < 0.1)
+				{
+					cloudNeighborPicked[i - 5] = 1;
+					cloudNeighborPicked[i - 4] = 1;
+					cloudNeighborPicked[i - 3] = 1;
+					cloudNeighborPicked[i - 2] = 1;
+					cloudNeighborPicked[i - 1] = 1;
+					cloudNeighborPicked[i] = 1;
+				}
+			} else
+			{
+				diffX = laserCloud->points[i + 1].x * depth1 / depth2 - laserCloud->points[i].x;
+				diffY = laserCloud->points[i + 1].y * depth1 / depth2 - laserCloud->points[i].y;
+				diffZ = laserCloud->points[i + 1].z * depth1 / depth2 - laserCloud->points[i].z;
+
+				if (sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ) / depth1 < 0.1)
+				{
+					cloudNeighborPicked[i + 1] = 1;
+					cloudNeighborPicked[i + 2] = 1;
+					cloudNeighborPicked[i + 3] = 1;
+					cloudNeighborPicked[i + 4] = 1;
+					cloudNeighborPicked[i + 5] = 1;
+					cloudNeighborPicked[i + 6] = 1;
+				}
+			}
+		}
+
+		float diffX2 = laserCloud->points[i].x - laserCloud->points[i - 1].x;
+		float diffY2 = laserCloud->points[i].y - laserCloud->points[i - 1].y;
+		float diffZ2 = laserCloud->points[i].z - laserCloud->points[i - 1].z;
+		float diff2 = diffX2 * diffX2 + diffY2 * diffY2 + diffZ2 * diffZ2;
+
+		float dis = laserCloud->points[i].x * laserCloud->points[i].x
+		+ laserCloud->points[i].y * laserCloud->points[i].y
+		+ laserCloud->points[i].z * laserCloud->points[i].z;
+
+		if (diff > (0.25 * 0.25) / (20 * 20) * dis && diff2 > (0.25 * 0.25) / (20 * 20) * dis)
+		{
+			cloudNeighborPicked[i] = 1;
+		}
+	}
+
 	// Split scan in 4 regions
 	int startPoints[4] = {	5,
 								6 + int((cloudSize - 10) / 4.0),
