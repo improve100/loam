@@ -24,7 +24,7 @@ void ScanRegistration::addScan(pcl::PointCloud<pcl::PointXYZ>::Ptr laserCloudIn,
 	int cloudSize = laserCloudIn->points.size();
 	
 	// New temporary pc to hold some additional values
-	// h: ?
+	// h: Timestamp
 	// s: Response of feature detector below
 	// v: 2(sharp) / 1(less sharp) / -1(flat) / 0(less flat)
 	pcl::PointCloud<pcl::PointXYZHSV>::Ptr laserCloud(new pcl::PointCloud<pcl::PointXYZHSV>(cloudSize, 1));

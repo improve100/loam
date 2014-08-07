@@ -82,6 +82,7 @@ void transformAssociateToMap()
 {
   // Get transform from tf
   tf::StampedTransform tf_transform;
+/*
   try
   {
 	tfListener->lookupTransform("camera", "camera_init", ros::Time(0), tf_transform);
@@ -90,7 +91,8 @@ void transformAssociateToMap()
   {
     ROS_WARN("%s", e.what());
   }
-
+*/
+  tf_transform.setIdentity();
   double roll, pitch, yaw;
   tf::Matrix3x3(tf_transform.getRotation()).getRPY(roll, pitch, yaw);
 
@@ -720,7 +722,7 @@ int main(int argc, char** argv)
 		tf::Transform tfTransform;
 		tfTransform.setRotation(tf::Quaternion(transformAftMapped[0], transformAftMapped[1], transformAftMapped[2]));
 		tfTransform.setOrigin(tf::Vector3(transformAftMapped[3], transformAftMapped[4], transformAftMapped[5]));
-		tfBroadcaster->sendTransform(tf::StampedTransform(tfTransform.inverse(), ros::Time(0), "camera_init_2", "camera_2"));
+		tfBroadcaster->sendTransform(tf::StampedTransform(tfTransform, ros::Time(0), "camera_init_2", "camera_2"));
 		
 		r.sleep();
 	}
