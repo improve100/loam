@@ -1,0 +1,21 @@
+<launch>
+
+	<group ns="new">
+		<node pkg="loam" type="scan_registration" name="ScanRegistration">
+			<remap from="sync_scan_cloud_filtered" to = "/sync_scan_cloud_filtered" />
+		</node>
+		<node pkg="loam" type="trigger" name="Trigger">
+			<remap from="sync_scan_cloud_filtered" to = "/sync_scan_cloud_filtered" />
+		</node>
+	</group>
+
+	<group ns = "old">
+		<node pkg="loam_back_and_forth" type="scanRegistration" name="ScanRegistration">
+			<remap from ="/laser_cloud_extre_cur" to="laser_cloud_extre_cur" />
+			<remap from ="/laser_cloud_last" to="laser_cloud_last" />
+		</node>
+	</group>
+
+	<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find loam)/launch/demo.rviz"/>
+
+</launch>

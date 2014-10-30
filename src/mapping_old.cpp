@@ -82,7 +82,7 @@ void transformAssociateToMap()
 {
   // Get transform from tf
   tf::StampedTransform tf_transform;
-/*
+
   try
   {
 	tfListener->lookupTransform("camera", "camera_init", ros::Time(0), tf_transform);
@@ -91,8 +91,8 @@ void transformAssociateToMap()
   {
     ROS_WARN("%s", e.what());
   }
-*/
-  tf_transform.setIdentity();
+
+//  tf_transform.setIdentity();
   double roll, pitch, yaw;
   tf::Matrix3x3(tf_transform.getRotation()).getRPY(roll, pitch, yaw);
 
